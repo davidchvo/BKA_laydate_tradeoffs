@@ -1,0 +1,598 @@
+---
+title: "Timing of breeding shapes the trade-offs between bactericidal ability and life history in a migratory bird"
+author: "David Chang van Oordt, Conor C. Taff, Thomas A. Ryan, Maren N. Vitousek"
+bibliography: vitousek2018.bib
+output: 
+  github_document:
+    toc: true
+    toc_depth: 4
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, error = FALSE,
+                      fig.align = "center")
+
+# Load packages.
+library(lme4)
+library(bbmle)
+library(gridExtra)
+library(dagitty)
+library(lubridate)
+library(viridis)
+library(here)
+library(sjPlot)
+library(gtsummary)
+library(MASS)
+library(tidyverse)
+library(knitr)
+library(broom)
+library(lmerTest)
+library(here)
+
+## functions
+# legend extraction
+get_legend<-function(myggplot){
+  tmp <- ggplot_gtable(ggplot_build(myggplot))
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+  legend <- tmp$grobs[[leg]]
+  return(legend)
+}
+# over dispersion
+dfun <- function(object) {
+  with(object,sum((weights * residuals^2)[weights > 0])/df.residual)
+  }
+
+# Read data files:
+# Assay data
+bk <- read_csv(here("data", "bk.csv"), col_types = 
+                 cols(
+                   Sex = col_factor(),
+                   bleed.type = col_factor()
+                 ))
+
+# Physio and fitness data + bka
+df <- read_csv(here("data", "df.csv"), 
+               col_types = cols(
+                 Sex = col_factor(),
+                 Experiment = col_factor(),
+                 Treatment = col_factor(),
+                 Age = col_factor(),
+                 Plasma_Analyzed = col_factor(),
+                 Nest_Fate = col_factor(),
+                 Treatment2 = col_factor()
+               ))
+
+# Nestling data
+nd <- read_csv(here("data", "nd.csv"), 
+               col_types = cols(
+                 Sex = col_factor(),
+                 Experiment = col_factor(),
+                 Treatment = col_factor(),
+                 Age = col_factor(),
+                 Plasma_Analyzed = col_factor(),
+                 Nest_Fate = col_factor() 
+                 ))
+
+# Daily feeding visits
+rfid_d <- read_csv(here("data", "feed_by_day.csv") )
+
+# Hourly feeding data
+pc <- read_csv(here("data", "pc.csv"),
+               col_types = cols(
+                 Experiment = col_factor(),
+                 Treatment = col_factor(),
+                 f_age = col_factor(),
+                 Plasma_Analyzed = col_factor(),
+                 Nest_Fate = col_factor()
+                 ))
+```
+
+# Goals and Hypotheses
+
+The general paradigm states that immunity trades off with life history traits. 
+The rationale is that any energy and resources invested on immunity comes off from other bodily functions like reproduction. 
+Here we aim to look for evidence between innate immunity and life history trade-offs in Tree Swallows (TRES, *Tachycineta bicolor*).
+
+We have 3 central hypotheses to evaluate:  
+
+1. Immunity trades off with the physiological response to stressors
+2. Immunity trades off with reproductive effort
+3. Trade-offs between immunity and reproductive effort lead to costs to reproductive success
+
+We use bactericidal ability of plasma as a measure of innate immunity. bactericidal ability using blood plasma is a complement-dependent process.
+
+# Methods
+
+We performed `r length(unique(bk$sample.no))` Bacteria Killing Assays (BKA) using fresh plasma from `r length(unique(bk$Individual_Band))` female breeding TRES. 
+We diluted 5 $\mu$L of plasma in 95 $\mu$L of CO2-independent medium. We then diluted it further to a 1.25% plasma-medium dilution. 
+Each sample was then challenged with PBS containing `r min(min(bk$positive.1, na.rm = TRUE),min(bk$positive.2, na.rm = TRUE))` to `r max(max(bk$positive.1, na.rm = TRUE),max(bk$positive.2, na.rm = TRUE))` *Escherichia coli* ATCC 8739 (Microbiologics, Epower *E. coli* ATCC 8739) and left to incubate for 45 minutes in a water bath at 40° C.
+We then plated 50 $\mu$L of the sample on a petri dish with Tryptic Soy Agar and incubated these for 12h at 37° C. 
+We counted all the colonies that grew overnight. 
+Each sample was challenged twice and each challenge was plated in two petri dishes. 
+We calculated bactericidal ability as the proportion of bacteria killed based on a challenge with no plasma. 
+The data in this study is the average of those data counts.
+
+## Assay repeatability
+
+We our data to assess assay repeatability across plates and sample dilutions.
+
+```{r repeatability, fig.width = 8, fig.height = 4}
+# Repeatability by plate
+
+pseurep <- bk %>%
+  ggplot() + geom_point(aes(x=rep1, y=rep2)) +
+  geom_abline(slope =1) +
+  theme(panel.background = element_rect(fill=NA),
+        axis.line = element_line(size=1),
+        legend.position = "none") +
+  labs(title="Pseureplicates - Plate effect",
+       x = "No. of CFUs in Plate 1",
+       y = "No. of CFUs in Plate 2") +
+  scale_y_continuous(expand = c(0,0), limits = c(0,700)) +
+  scale_x_continuous(expand = c(0,0), limits = c(0,700)) +
+  annotate("text", x = 500, y = 600, 
+           label = paste("r","=",
+                         round(cor(cbind(bk$rep1, bk$rep2),
+                                   method = "pearson")[1,2], 3) ) )
+
+# Repeatability by reaction
+
+reps <- inner_join(filter(bk, rxn.rep == 1) %>% select(Individual_Band, bkc),
+           filter(bk, rxn.rep == 2) %>% select(Individual_Band, bkc),
+           by = "Individual_Band")
+
+rxnrep <- reps %>%
+  ggplot() + geom_point(aes(x=bkc.x, y=bkc.y)) +
+  geom_abline(slope =1) +
+  theme(panel.background = element_rect(fill=NA),
+        axis.line = element_line(size=1),
+        legend.position = "none") +
+  labs(title="Reaction repeatibility",
+       x = "Prop. Bacteria Killed in Challenge 1",
+       y = "Prop. Bacteria Killed in Challenge 2") +
+  annotate("text", x = 0.5, y = 0.95, 
+           label = paste("r =",round(cor(reps[,-1])[1,2], 3) ) ) 
+
+grid.arrange(pseurep, rxnrep, ncol = 2)
+```
+
+## Sample type comparison
+
+Since a subset of plasma samples were taken from blood samples taken 30 minutes after disturbance, we evaluated if there was a difference in BKA between these sample types.
+
+```{r water to land comparison}
+# Boxplot
+bk %>%
+  group_by(Individual_Band, bleed.type) %>%
+  ggplot() + geom_boxplot(aes(x = bleed.type, y = bkc, fill=bleed.type), 
+                          size = 1, width = 0.25) +
+  theme(panel.background = element_rect(fill=NA),
+        axis.line = element_line(size=1),
+        legend.position = "none") +
+  labs(x = "Sample timing", y = "Prop. Bacteria Killed") +
+  scale_x_discrete(labels = c("< 3 minutes", "30 min"))
+
+# T-test
+t.test(bkc~ bleed.type, 
+       data = bk %>% group_by(Individual_Band, bleed.type) %>% 
+         summarise(bkc=mean(bkc))
+       ) %>% tidy() %>% kable()
+```
+# Results
+
+## BKA in our population
+
+```{r bka summary}
+bk %>%
+  group_by(Individual_Band) %>% 
+  summarise(bkc = mean(bkc)) %>%
+  ggplot() + geom_histogram(aes(bkc), bins = 15, colour = "white") +
+  theme(panel.background = element_rect(fill=NA),
+        axis.line = element_line(size=1)) +
+  scale_y_continuous(limits = c(0, 10), breaks=seq(0,10,by=2),
+                     expand = c(0,0)) +
+  geom_vline(xintercept=0, linetype = "dashed", colour = "grey") +
+  labs(x = "Prop. Bacteria Killed", y = "No. of individuals")
+
+summ_bk <- group_by(bk, Individual_Band) %>% summarise(bkc = mean(bkc))
+summ <- matrix(0, nrow = 1, ncol = 6)
+colnames(summ) <- c("Mean", "S.D.", "2.5%", "97.5%", "Min.", "Max.")
+summ[1,1] <- mean(summ_bk$bkc, na.rm = TRUE)
+summ[1,2] <- sd(summ_bk$bkc, na.rm = TRUE)
+summ[1,3] <- summ[1,1] - 1.96*summ[1,2]/sqrt(nrow(summ_bk))
+summ[1,4] <- summ[1,1] + 1.96*summ[1,2]/sqrt(nrow(summ_bk))
+summ[1,5] <- min(summ_bk)
+summ[1,6] <- max(summ_bk)
+kable(summ)
+```
+
+## BKA and Reproductive Effort
+
+### General trend evaluation
+
+#### BKA and age
+
+```{r BKA age}
+summary(glm(bk ~ Age,  family=Gamma(link="inverse"),
+            data = filter(df, Capture_Number == 1),))
+```
+
+#### BKA and Lay Date
+
+```{r bka laydate}
+summary(glm(bk ~ ylaydate, family = Gamma(link="inverse"),
+                  data = filter(df, Capture_Number == 1)))
+```
+
+### Clutch Size
+
+#### Clutch size data distribution
+
+```{r clutch distribution}
+ggplot(filter(df,Capture_Number == 1) ) +
+                 geom_histogram(aes(x=Clutch_Size), 
+                                colour = "white", bins = 15) +
+                 theme(panel.background = element_rect(fill=NA),
+                       axis.line = element_line(size=1)) +
+                 scale_y_continuous(expand = c(0,0)) +
+                 labs(x= "Clutch size",
+                      y = "No. of individuals") +
+                 scale_x_continuous(limits = c(0,8),
+                                    breaks = 1:8)
+```
+
+#### Clutch size models
+
+##### Null model
+
+```{r clutch null}
+clutch_m1 <- glm(Clutch_Size ~ Age + ylaydate,
+                family = quasipoisson(link = "log"), 
+                data = filter(df, Capture_Number == 1))
+summary(clutch_m1)
+```
+
+##### BKA model
+
+```{r clutch BKA}
+clutch_m2 <- glm(Clutch_Size ~ Bacteria_Killing_Assay + Age + ylaydate,
+                family = quasipoisson(link = "log"), 
+                data = filter(df, Capture_Number == 1))
+summary(clutch_m2)
+```
+
+##### Interaction model
+
+```{r clutch interaction}
+clutch_m3 <- glm(Clutch_Size ~ Bacteria_Killing_Assay*ylaydate + Age,
+                 family = quasipoisson(link = "log"), 
+                 data = filter(df, Capture_Number == 1))
+summary(clutch_m3)
+```
+
+##### Model comparison
+
+```{r aic clutch}
+# redefine models to poisson models
+clutch_m1p <- glm(Clutch_Size ~ Age + ylaydate,
+                family = poisson(link = "log"), 
+                data = filter(df, Capture_Number == 1))
+clutch_m2p <- glm(Clutch_Size ~ Bacteria_Killing_Assay + Age + ylaydate,
+                family = poisson(link = "log"), 
+                data = filter(df, Capture_Number == 1))
+clutch_m3p <- glm(Clutch_Size ~ Bacteria_Killing_Assay*ylaydate + Age,
+                 family = poisson(link = "log"), 
+                 data = filter(df, Capture_Number == 1))
+
+ICtab(clutch_m1p, clutch_m2p, clutch_m3p, dispersion = dfun(clutch_m1p), type = "qAIC")
+```
+
+### Nestling Feeding Rate
+
+#### Feeding Rate variation
+
+```{r visits variation}
+
+# Note that Offset refers to Nestling Age.
+
+ggplot(rfid_d) + 
+  geom_point(aes(x= Offset, y = FemFeed, color = f_rfid), show.legend = F) + 
+  geom_line(aes(x= Offset, y = FemFeed, color = f_rfid), show.legend = F) +
+  scale_x_continuous(expand = c(0,0), limits = c(0,20)) +
+  scale_y_continuous(expand = c(0,0)) +
+  theme(panel.background = element_rect(fill=NA),
+        axis.line = element_line(size=1),
+        legend.position = "none") +
+  labs(title="Daily provisioning visits per female",
+       x = "Nestling Age",
+       y = "Number of visits")
+```
+#### Feeding Rate models
+
+```{r data scaling}
+scaled_pc <- pc %>%
+  mutate(scBrood_Size_Hatching = scale(Brood_Size_Hatching),
+         scOffset = scale(Offset),
+         scHour = scale(Hour),
+         scjlaydate = scale(jlaydate),
+         sctemp = scale(temp),
+         scMalFeed = scale(MalFeed),
+         scbkc = scale(bkc),
+         Individual_Band = as.factor(Individual_Band))
+```
+
+##### For all nests
+
+###### Null model
+
+These models are modified from [@vitousekLingeringImpactStress2018]
+
+```{r feeding null}
+provisioning_m1 <- glmer(data = scaled_pc, FemFeed ~ scBrood_Size_Hatching + 
+                           I(scBrood_Size_Hatching^2) + scOffset + I(scOffset^2) + 
+                           scHour + I(scHour^2) + scjlaydate + sctemp + 
+                           Treatment + scBrood_Size_Hatching*scOffset + 
+                           (1|Individual_Band),
+                         family=poisson(link="log")); 
+summary(provisioning_m1)
+
+```
+
+###### BKA model
+
+```{r feeding BKA}
+# bkc model
+provisioning_m2 <- glmer(data = scaled_pc, FemFeed ~ scBrood_Size_Hatching + 
+                           I(scBrood_Size_Hatching^2) + scOffset + I(scOffset^2) + 
+                           scHour + I(scHour^2) + scjlaydate + sctemp + 
+                           Treatment + scBrood_Size_Hatching*scOffset + 
+                           (1|Individual_Band) + scbkc,
+                         family=poisson(link="log"))
+summary(provisioning_m2)
+```
+
+###### Interaction model
+
+```{r feeding interaction}
+provisioning_m3 <- glmer(data = scaled_pc, FemFeed ~ scBrood_Size_Hatching + 
+                            I(scBrood_Size_Hatching^2) + scOffset + I(scOffset^2) + 
+                            scHour + I(scHour^2) + sctemp + 
+                            Treatment + scBrood_Size_Hatching*scOffset + 
+                            (1|Individual_Band) + scbkc*scjlaydate,
+                          family=poisson(link="log"))
+summary(provisioning_m3)
+```
+
+###### Model comparison
+
+```{r aic provisioning}
+ICtab(provisioning_m1, provisioning_m2, provisioning_m3, type = "AIC")
+```
+
+#### Including Mate provisioning
+
+##### Null model
+
+```{r mate provisioning null}
+provisioning_m4 <- glmer(data = scaled_pc, FemFeed ~ scBrood_Size_Hatching + 
+                           I(scBrood_Size_Hatching^2) + scOffset + I(scOffset^2) + 
+                           scHour + I(scHour^2) + scjlaydate + sctemp + 
+                           Treatment + scMalFeed + scBrood_Size_Hatching*scOffset + 
+                           (1|Individual_Band),
+                         family=poisson(link="log"),
+                         control = glmerControl(optimizer = "Nelder_Mead")); 
+summary(provisioning_m4)
+```
+
+##### BKA model
+
+```{r mate provisioning bka}
+provisioning_m5 <- glmer(data = scaled_pc, FemFeed ~ scBrood_Size_Hatching + 
+                           I(scBrood_Size_Hatching^2) + scOffset + I(scOffset^2) + 
+                           scHour + I(scHour^2) + scjlaydate + sctemp + 
+                           Treatment + scMalFeed + scBrood_Size_Hatching*scOffset + 
+                           (1|Individual_Band) + scbkc,
+                         family=poisson(link="log"))
+summary(provisioning_m5)
+```
+
+##### Interaction model
+
+```{r mate provisioning interaction}
+provisioning_m6 <- glmer(data = scaled_pc, FemFeed ~ scBrood_Size_Hatching + 
+                           I(scBrood_Size_Hatching^2) + scOffset + I(scOffset^2) + 
+                           scHour + I(scHour^2) + sctemp + 
+                           Treatment + scBrood_Size_Hatching*scOffset + scMalFeed +
+                           (1|Individual_Band) + scbkc*scjlaydate,
+                         family=poisson(link="log"))
+summary(provisioning_m6)
+```
+
+###### Model Comparison
+
+```{r mate provisioning AIC}
+ICtab(provisioning_m4, provisioning_m5, provisioning_m6, type = "AIC")
+```
+
+### Adaptive Mass Loss
+
+#### Mass loss distribution
+
+```{r mass loss histogram}
+df_massloss <- left_join(filter(df, Experiment == "Color_Stressor", Capture_Number == 1),
+          dplyr::select(filter(df, Experiment == "Color_Stressor", Capture_Number == 3), Individual_Band, Mass), 
+          by = "Individual_Band") %>%
+  mutate(prop.ml = (Mass.y - Mass.x)/Mass.x)
+
+ggplot(df_massloss) +
+  geom_histogram(aes(x=prop.ml),
+                 colour = "white", bins = 15) +
+  theme(panel.background = element_rect(fill=NA),
+        axis.line = element_line(size=1)) +
+  scale_y_continuous(expand = c(0,0)) +
+  labs(x= "Mass lost (g)",
+       y = "No. of individuals")
+```
+
+#### Mass loss models
+
+##### Null model
+
+```{r mass loss null}
+prop_mass_loss_m1 <- glm(prop.ml ~ ylaydate + Brood_Size_Hatching + Treatment2, 
+                         family = gaussian(link = "identity"),
+                         data = df_massloss)
+summary(prop_mass_loss_m1)
+```
+
+##### BKA model
+
+```{r mass loss bka}
+prop_mass_loss_m2 <- glm(prop.ml ~ Bacteria_Killing_Assay + ylaydate + Brood_Size_Hatching + Treatment2, 
+                         family = gaussian(link = "identity"),
+                         data = df_massloss)
+summary(prop_mass_loss_m2)
+```
+
+##### Interaction model
+
+```{r mass loss interaction}
+prop_mass_loss_m3 <- glm(prop.ml ~ Bacteria_Killing_Assay*ylaydate + Brood_Size_Hatching + Treatment2, 
+                         family = gaussian(link = "identity"),
+                         data = df_massloss)
+summary(prop_mass_loss_m3)
+```
+
+##### Model comparison
+
+```{r aic mass loss}
+ICtab(prop_mass_loss_m1, prop_mass_loss_m2, prop_mass_loss_m3, type = "AIC")
+```
+
+## BKA and reproductive success
+
+### Number of nestlings fledged
+
+#### Number fledged distribution
+
+```{r fledged histogram}
+ggplot(filter(df, Capture_Number == 1, .fledged > 0 )) +
+  geom_histogram(aes(x=.fledged),
+                 colour = "white", bins = 15) +
+  theme(panel.background = element_rect(fill=NA),
+        axis.line = element_line(size=1)) +
+  scale_y_continuous(expand = c(0,0)) +
+  labs(x= "Number of nestlings fledged",
+       y = "No. of individuals")
+```
+
+#### Number fledged models
+
+##### Null model
+
+```{r nfledged null}
+fledged_m1 <- glm(.fledged ~ Brood_Size_Hatching + ylaydate +  Treatment, 
+                  family = quasipoisson(link = "log"), 
+                  data = filter(df, Capture_Number == 1, .fledged > 0 ) )
+summary(fledged_m1)
+```
+
+##### BKA model
+
+```{r nfledged BKA}
+fledged_m2 <- glm(.fledged ~ Bacteria_Killing_Assay + Brood_Size_Hatching + 
+                    ylaydate + Treatment, family = quasipoisson(link = "log"), 
+                  data = filter(df, Capture_Number == 1, .fledged > 0 ) )
+summary(fledged_m2)
+```
+
+##### Interaction model
+
+```{r nfledged interaction}
+fledged_m3 <- glm(.fledged ~ Bacteria_Killing_Assay*ylaydate + 
+                    Brood_Size_Hatching + Treatment, 
+                  family = quasipoisson(link = "log"), 
+                  data = filter(df, Capture_Number == 1, .fledged > 0 ) )
+summary(fledged_m3)
+```
+
+##### Model comparison
+
+```{r aic nfledged}
+# redefine models to poisson
+fledged_m1p <- glm(.fledged ~ Brood_Size_Hatching + ylaydate +  Treatment, 
+                  family = poisson(link = "log"), 
+                  data = filter(df, Capture_Number == 1, .fledged > 0 ) )
+fledged_m2p <- glm(.fledged ~ Bacteria_Killing_Assay + Brood_Size_Hatching + 
+                    ylaydate + Treatment, family = poisson(link = "log"), 
+                  data = filter(df, Capture_Number == 1, .fledged > 0 ) )
+fledged_m3p <- glm(.fledged ~ Bacteria_Killing_Assay*ylaydate + 
+                    Brood_Size_Hatching + Treatment, 
+                  family = poisson(link = "log"), 
+                  data = filter(df, Capture_Number == 1, .fledged > 0 ) )
+
+ICtab(fledged_m1p, fledged_m2p, fledged_m3p, dispersion = dfun(fledged_m1p), type = "qAIC")
+```
+
+### Nestling mass
+
+#### Nestling mass distribution
+
+```{r nestling mass histogram}
+ggplot(filter(nd, Capture_Number == 1, Nestling_Fate == "Fledged")) +
+  geom_histogram(aes(x = Nestling_Mass),
+                 colour = "white", bins = 15) +
+  theme(panel.background = element_rect(fill=NA),
+        axis.line = element_line(size=1)) +
+  scale_y_continuous(expand = c(0,0)) +
+  labs(x= "Nestling mass at day 12 (g)",
+       y = "No. of individuals")
+```
+
+#### Nestling mass models
+
+##### Null model
+
+```{r nestling mass null}
+nd <- nd %>%
+  mutate(Unit_Box = paste(Site, Nest, sep = "_"))
+
+
+nestling_m1 <- lmer(Nestling_Mass ~ Brood_Size_Hatching + 
+                     ylaydate + Treatment2 + temp + (1|Unit_Box), 
+                   data = filter(nd, Capture_Number == 1, 
+                                 Nestling_Fate == "Fledged") )
+summary(nestling_m1)
+```
+
+##### BKA model
+
+```{r nestling mass bka}
+nestling_m2 <- lmer(Nestling_Mass ~ Bacteria_Killing_Assay + 
+                     Brood_Size_Hatching + temp +
+                      ylaydate + Treatment2 + (1|Unit_Box), 
+                   data = filter(nd, Capture_Number == 1, 
+                                 Nestling_Fate == "Fledged") )
+summary(nestling_m2)
+```
+
+##### Interaction model
+
+```{r nestling mass interaction}
+nestling_m3 <- lmer(Nestling_Mass ~ Bacteria_Killing_Assay*ylaydate + 
+                     Brood_Size_Hatching + temp +
+                      Treatment2 + (1|Unit_Box), 
+                   data = filter(nd, Capture_Number == 1, 
+                                 Nestling_Fate == "Fledged") )
+summary(nestling_m3)
+```
+
+##### Model comparison
+
+```{r aic neslting mass}
+ICtab(nestling_m1, nestling_m2, nestling_m3, type = "AIC")
+```
+
+
+# References
+
