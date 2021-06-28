@@ -414,7 +414,7 @@ summary(provisioning_m6)
 ICtab(provisioning_m4, provisioning_m5, provisioning_m6, type = "AIC")
 ```
 
-### Adaptive Mass Loss
+### Seasonal Mass Loss
 
 #### Mass loss distribution
 
@@ -561,7 +561,8 @@ nd <- nd %>%
 nestling_m1 <- lmer(Nestling_Mass ~ Brood_Size_Hatching + 
                      ylaydate + Treatment2 + temp + (1|Unit_Box), 
                    data = filter(nd, Capture_Number == 1, 
-                                 Nestling_Fate == "Fledged") )
+                                 Nestling_Fate == "Fledged",
+                                 Bacteria_Killing_Assay != "NA") )
 summary(nestling_m1)
 ```
 
@@ -572,7 +573,8 @@ nestling_m2 <- lmer(Nestling_Mass ~ Bacteria_Killing_Assay +
                      Brood_Size_Hatching + temp +
                       ylaydate + Treatment2 + (1|Unit_Box), 
                    data = filter(nd, Capture_Number == 1, 
-                                 Nestling_Fate == "Fledged") )
+                                 Nestling_Fate == "Fledged",
+                                 Bacteria_Killing_Assay != "NA") )
 summary(nestling_m2)
 ```
 
@@ -583,7 +585,8 @@ nestling_m3 <- lmer(Nestling_Mass ~ Bacteria_Killing_Assay*ylaydate +
                      Brood_Size_Hatching + temp +
                       Treatment2 + (1|Unit_Box), 
                    data = filter(nd, Capture_Number == 1, 
-                                 Nestling_Fate == "Fledged") )
+                                 Nestling_Fate == "Fledged",
+                                 Bacteria_Killing_Assay != "NA") )
 summary(nestling_m3)
 ```
 

@@ -18,7 +18,7 @@ David Chang van Oordt, Conor C. Taff, Thomas A. Ryan, Maren N. Vitousek
         -   [Nestling Feeding Rate](#nestling-feeding-rate)
             -   [Feeding Rate variation](#feeding-rate-variation)
             -   [Including Mate provisioning](#including-mate-provisioning)
-        -   [Adaptive Mass Loss](#adaptive-mass-loss)
+        -   [Seasonal Mass Loss](#seasonal-mass-loss)
             -   [Mass loss distribution](#mass-loss-distribution)
             -   [Mass loss models](#mass-loss-models)
     -   [BKA and reproductive success](#bka-and-reproductive-success)
@@ -836,7 +836,7 @@ ICtab(provisioning_m4, provisioning_m5, provisioning_m6, type = "AIC")
     ## provisioning_m5  1.0 16
     ## provisioning_m6  2.6 17
 
-### Adaptive Mass Loss
+### Seasonal Mass Loss
 
 #### Mass loss distribution
 
@@ -1171,7 +1171,8 @@ nd <- nd %>%
 nestling_m1 <- lmer(Nestling_Mass ~ Brood_Size_Hatching + 
                      ylaydate + Treatment2 + temp + (1|Unit_Box), 
                    data = filter(nd, Capture_Number == 1, 
-                                 Nestling_Fate == "Fledged") )
+                                 Nestling_Fate == "Fledged",
+                                 Bacteria_Killing_Assay != "NA") )
 summary(nestling_m1)
 ```
 
@@ -1179,42 +1180,44 @@ summary(nestling_m1)
     ## lmerModLmerTest]
     ## Formula: Nestling_Mass ~ Brood_Size_Hatching + ylaydate + Treatment2 +  
     ##     temp + (1 | Unit_Box)
-    ##    Data: filter(nd, Capture_Number == 1, Nestling_Fate == "Fledged")
+    ##    Data: 
+    ## filter(nd, Capture_Number == 1, Nestling_Fate == "Fledged", Bacteria_Killing_Assay !=  
+    ##     "NA")
     ## 
-    ## REML criterion at convergence: 993.4
+    ## REML criterion at convergence: 562.2
     ## 
     ## Scaled residuals: 
-    ##     Min      1Q  Median      3Q     Max 
-    ## -3.1453 -0.4825  0.0556  0.4894  3.7657 
+    ##      Min       1Q   Median       3Q      Max 
+    ## -2.90108 -0.50326  0.06341  0.49698  3.05004 
     ## 
     ## Random effects:
     ##  Groups   Name        Variance Std.Dev.
-    ##  Unit_Box (Intercept) 2.839    1.685   
-    ##  Residual             3.538    1.881   
-    ## Number of obs: 225, groups:  Unit_Box, 56
+    ##  Unit_Box (Intercept) 2.146    1.465   
+    ##  Residual             3.289    1.813   
+    ## Number of obs: 132, groups:  Unit_Box, 34
     ## 
     ## Fixed effects:
     ##                            Estimate Std. Error       df t value Pr(>|t|)    
-    ## (Intercept)                32.14200    6.29426 46.52952   5.107 5.99e-06 ***
-    ## Brood_Size_Hatching        -0.88852    0.26813 52.72164  -3.314 0.001669 ** 
-    ## ylaydate                   -0.31737    0.07454 43.33050  -4.258 0.000109 ***
-    ## Treatment2Control_Dull     -0.94276    1.07036 45.64406  -0.881 0.383050    
-    ## Treatment2Predator_Control -2.08172    1.30115 46.05026  -1.600 0.116459    
-    ## Treatment2Predator_Dull    -1.10297    1.07318 44.44797  -1.028 0.309625    
-    ## Treatment2Water             0.37641    0.78562 41.05093   0.479 0.634389    
-    ## temp                        2.02317    0.36395 42.33768   5.559 1.67e-06 ***
+    ## (Intercept)                18.04627   10.41281 23.96477   1.733 0.095932 .  
+    ## Brood_Size_Hatching        -1.34529    0.34944 22.64691  -3.850 0.000834 ***
+    ## ylaydate                   -0.09624    0.11263 24.17820  -0.854 0.401246    
+    ## Treatment2Control_Dull     -0.91266    1.17312 23.19759  -0.778 0.444448    
+    ## Treatment2Predator_Control -2.53446    1.36576 22.66705  -1.856 0.076543 .  
+    ## Treatment2Predator_Dull    -1.56940    1.37326 22.26054  -1.143 0.265255    
+    ## Treatment2Water            -0.64936    0.95434 20.90728  -0.680 0.503700    
+    ## temp                        1.21669    0.57544 21.26182   2.114 0.046464 *  
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
     ## Correlation of Fixed Effects:
     ##             (Intr) Br_S_H ylaydt Tr2C_D Tr2P_C Tr2P_D Trtm2W
-    ## Brd_Sz_Htch -0.133                                          
-    ## ylaydate    -0.764 -0.228                                   
-    ## Trtmnt2Cn_D  0.063  0.213 -0.192                            
-    ## Trtmnt2Pr_C  0.042  0.253 -0.039  0.400                     
-    ## Trtmnt2Pr_D -0.041  0.312 -0.083  0.476  0.436              
-    ## Tretmnt2Wtr  0.095  0.083 -0.140  0.595  0.516  0.591       
-    ## temp         0.270  0.274 -0.810  0.130 -0.100  0.034  0.015
+    ## Brd_Sz_Htch -0.159                                          
+    ## ylaydate    -0.744 -0.156                                   
+    ## Trtmnt2Cn_D  0.171  0.149 -0.231                            
+    ## Trtmnt2Pr_C  0.139  0.268 -0.009  0.463                     
+    ## Trtmnt2Pr_D  0.074  0.451 -0.172  0.485  0.512              
+    ## Tretmnt2Wtr  0.236  0.082 -0.365  0.630  0.492  0.541       
+    ## temp         0.132  0.225 -0.748  0.098 -0.235  0.059  0.241
 
 ##### BKA model
 
@@ -1223,7 +1226,8 @@ nestling_m2 <- lmer(Nestling_Mass ~ Bacteria_Killing_Assay +
                      Brood_Size_Hatching + temp +
                       ylaydate + Treatment2 + (1|Unit_Box), 
                    data = filter(nd, Capture_Number == 1, 
-                                 Nestling_Fate == "Fledged") )
+                                 Nestling_Fate == "Fledged",
+                                 Bacteria_Killing_Assay != "NA") )
 summary(nestling_m2)
 ```
 
@@ -1231,7 +1235,9 @@ summary(nestling_m2)
     ## lmerModLmerTest]
     ## Formula: Nestling_Mass ~ Bacteria_Killing_Assay + Brood_Size_Hatching +  
     ##     temp + ylaydate + Treatment2 + (1 | Unit_Box)
-    ##    Data: filter(nd, Capture_Number == 1, Nestling_Fate == "Fledged")
+    ##    Data: 
+    ## filter(nd, Capture_Number == 1, Nestling_Fate == "Fledged", Bacteria_Killing_Assay !=  
+    ##     "NA")
     ## 
     ## REML criterion at convergence: 560.4
     ## 
@@ -1277,7 +1283,8 @@ nestling_m3 <- lmer(Nestling_Mass ~ Bacteria_Killing_Assay*ylaydate +
                      Brood_Size_Hatching + temp +
                       Treatment2 + (1|Unit_Box), 
                    data = filter(nd, Capture_Number == 1, 
-                                 Nestling_Fate == "Fledged") )
+                                 Nestling_Fate == "Fledged",
+                                 Bacteria_Killing_Assay != "NA") )
 summary(nestling_m3)
 ```
 
@@ -1286,7 +1293,9 @@ summary(nestling_m3)
     ## Formula: 
     ## Nestling_Mass ~ Bacteria_Killing_Assay * ylaydate + Brood_Size_Hatching +  
     ##     temp + Treatment2 + (1 | Unit_Box)
-    ##    Data: filter(nd, Capture_Number == 1, Nestling_Fate == "Fledged")
+    ##    Data: 
+    ## filter(nd, Capture_Number == 1, Nestling_Fate == "Fledged", Bacteria_Killing_Assay !=  
+    ##     "NA")
     ## 
     ## REML criterion at convergence: 559.7
     ## 
@@ -1344,10 +1353,10 @@ summary(nestling_m3)
 ICtab(nestling_m1, nestling_m2, nestling_m3, type = "AIC")
 ```
 
-    ##             dAIC  df
-    ## nestling_m2   0.0 11
-    ## nestling_m3   1.3 12
-    ## nestling_m1 431.1 10
+    ##             dAIC df
+    ## nestling_m1  0.0 10
+    ## nestling_m2  0.2 11
+    ## nestling_m3  1.5 12
 
 References
 ==========
