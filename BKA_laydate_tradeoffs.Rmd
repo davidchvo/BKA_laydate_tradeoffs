@@ -414,7 +414,7 @@ summary(provisioning_m6)
 ICtab(provisioning_m4, provisioning_m5, provisioning_m6, type = "AIC")
 ```
 
-### Seasonal Mass Loss
+### Mass Loss
 
 #### Mass loss distribution
 
