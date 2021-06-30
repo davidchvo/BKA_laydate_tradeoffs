@@ -471,6 +471,43 @@ ICtab(prop_mass_loss_m1, prop_mass_loss_m2, prop_mass_loss_m3, type = "AIC")
 
 ## BKA and reproductive success
 
+### Fledging success
+
+#### Fleding success models
+
+##### Null model
+```{r success null}
+success_m1 <- glm(Success ~ Brood_Size_Hatching + ylaydate + Treatment2, 
+                  family = binomial(link = "logit"), 
+                  data = filter(df, Capture_Number == 1) %>%
+                    mutate(Success = ifelse(Nest_Fate == "Fledged", 1, 0)))
+summary(success_m1)
+```
+
+##### BKA model
+```{r success BKA}
+success_m2 <- glm(Success ~ Bacteria_Killing_Assay + Brood_Size_Hatching + 
+                    ylaydate + Treatment2, family = binomial(link = "logit"), 
+                  data = filter(df, Capture_Number == 1) %>%
+                    mutate(Success = ifelse(Nest_Fate == "Fledged", 1, 0)))
+summary(success_m2)
+```
+
+##### Interaction model
+```{r success interaction}
+success_m3 <- glm(Success ~ Bacteria_Killing_Assay*ylaydate + 
+                    Brood_Size_Hatching + Treatment2, 
+                  family = binomial(link = "logit"), 
+                  data = filter(df, Capture_Number == 1) %>%
+                    mutate(Success = ifelse(Nest_Fate == "Fledged", 1, 0)))
+summary(success_m3)
+```
+
+##### Model comparison
+```{r success AIC}
+ICtab(success_m1, success_m2, success_m3, type = "AIC")
+```
+
 ### Number of nestlings fledged
 
 #### Number fledged distribution

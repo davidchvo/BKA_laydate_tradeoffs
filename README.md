@@ -22,6 +22,8 @@ David Chang van Oordt, Conor C. Taff, Thomas A. Ryan, Maren N. Vitousek
             -   [Mass loss distribution](#mass-loss-distribution)
             -   [Mass loss models](#mass-loss-models)
     -   [BKA and reproductive success](#bka-and-reproductive-success)
+        -   [Fledging success](#fledging-success)
+            -   [Fleding success models](#fleding-success-models)
         -   [Number of nestlings fledged](#number-of-nestlings-fledged)
             -   [Number fledged distribution](#number-fledged-distribution)
             -   [Number fledged models](#number-fledged-models)
@@ -984,6 +986,145 @@ ICtab(prop_mass_loss_m1, prop_mass_loss_m2, prop_mass_loss_m3, type = "AIC")
 
 BKA and reproductive success
 ----------------------------
+
+### Fledging success
+
+#### Fleding success models
+
+##### Null model
+
+``` r
+success_m1 <- glm(Success ~ Brood_Size_Hatching + ylaydate + Treatment2, 
+                  family = binomial(link = "logit"), 
+                  data = filter(df, Capture_Number == 1) %>%
+                    mutate(Success = ifelse(Nest_Fate == "Fledged", 1, 0)))
+summary(success_m1)
+```
+
+    ## 
+    ## Call:
+    ## glm(formula = Success ~ Brood_Size_Hatching + ylaydate + Treatment2, 
+    ##     family = binomial(link = "logit"), data = filter(df, Capture_Number == 
+    ##         1) %>% mutate(Success = ifelse(Nest_Fate == "Fledged", 
+    ##         1, 0)))
+    ## 
+    ## Deviance Residuals: 
+    ##     Min       1Q   Median       3Q      Max  
+    ## -1.8221  -1.0034   0.6472   0.8764   1.4416  
+    ## 
+    ## Coefficients:
+    ##                              Estimate Std. Error z value Pr(>|z|)
+    ## (Intercept)                  -1.75366   12.32632  -0.142    0.887
+    ## Brood_Size_Hatching           0.05574    0.34680   0.161    0.872
+    ## ylaydate                      0.01610    0.08565   0.188    0.851
+    ## Treatment2Predator_Control   -1.12542    1.09540  -1.027    0.304
+    ## Treatment2Water               0.62160    1.09624   0.567    0.571
+    ## Treatment2Control_Control    -0.03648    1.17826  -0.031    0.975
+    ## Treatment2Control_Dull       16.81648 1768.53103   0.010    0.992
+    ## 
+    ## (Dispersion parameter for binomial family taken to be 1)
+    ## 
+    ##     Null deviance: 61.086  on 49  degrees of freedom
+    ## Residual deviance: 52.524  on 43  degrees of freedom
+    ##   (10 observations deleted due to missingness)
+    ## AIC: 66.524
+    ## 
+    ## Number of Fisher Scoring iterations: 16
+
+##### BKA model
+
+``` r
+success_m2 <- glm(Success ~ Bacteria_Killing_Assay + Brood_Size_Hatching + 
+                    ylaydate + Treatment2, family = binomial(link = "logit"), 
+                  data = filter(df, Capture_Number == 1) %>%
+                    mutate(Success = ifelse(Nest_Fate == "Fledged", 1, 0)))
+summary(success_m2)
+```
+
+    ## 
+    ## Call:
+    ## glm(formula = Success ~ Bacteria_Killing_Assay + Brood_Size_Hatching + 
+    ##     ylaydate + Treatment2, family = binomial(link = "logit"), 
+    ##     data = filter(df, Capture_Number == 1) %>% mutate(Success = ifelse(Nest_Fate == 
+    ##         "Fledged", 1, 0)))
+    ## 
+    ## Deviance Residuals: 
+    ##     Min       1Q   Median       3Q      Max  
+    ## -1.8684  -0.8746   0.5411   0.8639   1.7029  
+    ## 
+    ## Coefficients:
+    ##                              Estimate Std. Error z value Pr(>|z|)
+    ## (Intercept)                  -6.22877   12.94059  -0.481    0.630
+    ## Bacteria_Killing_Assay       -1.66241    1.22568  -1.356    0.175
+    ## Brood_Size_Hatching           0.15947    0.35284   0.452    0.651
+    ## ylaydate                      0.05236    0.09117   0.574    0.566
+    ## Treatment2Predator_Control   -1.47192    1.15418  -1.275    0.202
+    ## Treatment2Water               0.38255    1.10371   0.347    0.729
+    ## Treatment2Control_Control    -0.15251    1.19423  -0.128    0.898
+    ## Treatment2Control_Dull       16.65114 1697.89894   0.010    0.992
+    ## 
+    ## (Dispersion parameter for binomial family taken to be 1)
+    ## 
+    ##     Null deviance: 61.086  on 49  degrees of freedom
+    ## Residual deviance: 50.525  on 42  degrees of freedom
+    ##   (10 observations deleted due to missingness)
+    ## AIC: 66.525
+    ## 
+    ## Number of Fisher Scoring iterations: 16
+
+##### Interaction model
+
+``` r
+success_m3 <- glm(Success ~ Bacteria_Killing_Assay*ylaydate + 
+                    Brood_Size_Hatching + Treatment2, 
+                  family = binomial(link = "logit"), 
+                  data = filter(df, Capture_Number == 1) %>%
+                    mutate(Success = ifelse(Nest_Fate == "Fledged", 1, 0)))
+summary(success_m3)
+```
+
+    ## 
+    ## Call:
+    ## glm(formula = Success ~ Bacteria_Killing_Assay * ylaydate + Brood_Size_Hatching + 
+    ##     Treatment2, family = binomial(link = "logit"), data = filter(df, 
+    ##     Capture_Number == 1) %>% mutate(Success = ifelse(Nest_Fate == 
+    ##     "Fledged", 1, 0)))
+    ## 
+    ## Deviance Residuals: 
+    ##     Min       1Q   Median       3Q      Max  
+    ## -1.8693  -0.8700   0.5403   0.8551   1.6906  
+    ## 
+    ## Coefficients:
+    ##                                   Estimate Std. Error z value Pr(>|z|)
+    ## (Intercept)                       -5.13163   21.35244  -0.240    0.810
+    ## Bacteria_Killing_Assay            -4.35678   41.84226  -0.104    0.917
+    ## ylaydate                           0.04405    0.15762   0.279    0.780
+    ## Brood_Size_Hatching                0.17215    0.40411   0.426    0.670
+    ## Treatment2Predator_Control        -1.48935    1.18591  -1.256    0.209
+    ## Treatment2Water                    0.36792    1.12609   0.327    0.744
+    ## Treatment2Control_Control         -0.16261    1.20443  -0.135    0.893
+    ## Treatment2Control_Dull            16.62062 1696.09069   0.010    0.992
+    ## Bacteria_Killing_Assay:ylaydate    0.01945    0.30196   0.064    0.949
+    ## 
+    ## (Dispersion parameter for binomial family taken to be 1)
+    ## 
+    ##     Null deviance: 61.086  on 49  degrees of freedom
+    ## Residual deviance: 50.521  on 41  degrees of freedom
+    ##   (10 observations deleted due to missingness)
+    ## AIC: 68.521
+    ## 
+    ## Number of Fisher Scoring iterations: 16
+
+##### Model comparison
+
+``` r
+ICtab(success_m1, success_m2, success_m3, type = "AIC")
+```
+
+    ##            dAIC df
+    ## success_m1 0    7 
+    ## success_m2 0    8 
+    ## success_m3 2    9
 
 ### Number of nestlings fledged
 
