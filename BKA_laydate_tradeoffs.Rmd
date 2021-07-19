@@ -29,14 +29,6 @@ library(broom)
 library(lmerTest)
 library(here)
 
-## functions
-# legend extraction
-get_legend<-function(myggplot){
-  tmp <- ggplot_gtable(ggplot_build(myggplot))
-  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
-  legend <- tmp$grobs[[leg]]
-  return(legend)
-}
 # over dispersion
 dfun <- function(object) {
   with(object,sum((weights * residuals^2)[weights > 0])/df.residual)
@@ -87,19 +79,6 @@ pc <- read_csv(here("data", "pc.csv"),
                  ))
 ```
 
-# Goals and Hypotheses
-
-The general paradigm states that immunity trades off with life history traits. 
-The rationale is that any energy and resources invested on immunity comes off from other bodily functions like reproduction. 
-Here we aim to look for evidence between innate immunity and life history trade-offs in Tree Swallows (TRES, *Tachycineta bicolor*).
-
-We have 3 central hypotheses to evaluate:  
-
-1. Immunity trades off with the physiological response to stressors
-2. Immunity trades off with reproductive effort
-3. Trade-offs between immunity and reproductive effort lead to costs to reproductive success
-
-We use bactericidal ability of plasma as a measure of innate immunity. bactericidal ability using blood plasma is a complement-dependent process.
 
 # Methods
 
@@ -284,7 +263,7 @@ clutch_m3p <- glm(Clutch_Size ~ Bacteria_Killing_Assay*ylaydate + Age,
                  family = poisson(link = "log"), 
                  data = filter(df, Capture_Number == 1))
 
-ICtab(clutch_m1p, clutch_m2p, clutch_m3p, dispersion = dfun(clutch_m1p), type = "qAIC")
+ICtab(clutch_m1p, clutch_m2p, clutch_m3p, dispersion = dfun(clutch_m1p), type = "qAICc")
 ```
 
 ### Nestling Feeding Rate
@@ -366,7 +345,7 @@ summary(provisioning_m3)
 ###### Model comparison
 
 ```{r aic provisioning}
-ICtab(provisioning_m1, provisioning_m2, provisioning_m3, type = "AIC")
+ICtab(provisioning_m1, provisioning_m2, provisioning_m3, type = "AICc")
 ```
 
 #### Including Mate provisioning
@@ -466,7 +445,7 @@ summary(prop_mass_loss_m3)
 ##### Model comparison
 
 ```{r aic mass loss}
-ICtab(prop_mass_loss_m1, prop_mass_loss_m2, prop_mass_loss_m3, type = "AIC")
+ICtab(prop_mass_loss_m1, prop_mass_loss_m2, prop_mass_loss_m3, type = "AICc")
 ```
 
 ## BKA and reproductive success
@@ -505,7 +484,7 @@ summary(success_m3)
 
 ##### Model comparison
 ```{r success AIC}
-ICtab(success_m1, success_m2, success_m3, type = "AIC")
+ICtab(success_m1, success_m2, success_m3, type = "AICc")
 ```
 
 ### Number of nestlings fledged
@@ -568,7 +547,7 @@ fledged_m3p <- glm(.fledged ~ Bacteria_Killing_Assay*ylaydate +
                   family = poisson(link = "log"), 
                   data = filter(df, Capture_Number == 1, .fledged > 0 ) )
 
-ICtab(fledged_m1p, fledged_m2p, fledged_m3p, dispersion = dfun(fledged_m1p), type = "qAIC")
+ICtab(fledged_m1p, fledged_m2p, fledged_m3p, dispersion = dfun(fledged_m1p), type = "qAICc")
 ```
 
 ### Nestling mass
@@ -630,7 +609,7 @@ summary(nestling_m3)
 ##### Model comparison
 
 ```{r aic neslting mass}
-ICtab(nestling_m1, nestling_m2, nestling_m3, type = "AIC")
+ICtab(nestling_m1, nestling_m2, nestling_m3, type = "AICc")
 ```
 
 
