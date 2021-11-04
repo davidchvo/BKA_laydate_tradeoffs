@@ -1,11 +1,11 @@
-Timing of breeding shapes the trade-offs between bactericidal ability and life history in a migratory bird
+Timing of breeding reveals a trade-off between constitutive immune
+investment and life history in a migratory bird
 ================
 David Chang van Oordt, Conor C. Taff, Thomas A. Ryan, Maren N. Vitousek
 
--   [Goals and Hypotheses](#goals-and-hypotheses)
--   [Methods](#methods)
+-   [Method assessment](#method-assessment)
     -   [Assay repeatability](#assay-repeatability)
-    -   [Sample type comparison](#sample-type-comparison)
+    -   [Treament type comparisons](#treament-type-comparisons)
 -   [Results](#results)
     -   [BKA in our population](#bka-in-our-population)
     -   [BKA and Reproductive Effort](#bka-and-reproductive-effort)
@@ -13,47 +13,36 @@ David Chang van Oordt, Conor C. Taff, Thomas A. Ryan, Maren N. Vitousek
             -   [BKA and age](#bka-and-age)
             -   [BKA and Lay Date](#bka-and-lay-date)
         -   [Clutch Size](#clutch-size)
-            -   [Clutch size data distribution](#clutch-size-data-distribution)
+            -   [Clutch size data
+                distribution](#clutch-size-data-distribution)
             -   [Clutch size models](#clutch-size-models)
         -   [Nestling Feeding Rate](#nestling-feeding-rate)
             -   [Feeding Rate variation](#feeding-rate-variation)
-            -   [Including Mate provisioning](#including-mate-provisioning)
-        -   [Seasonal Mass Loss](#seasonal-mass-loss)
+            -   [Feeding Rate models](#feeding-rate-models)
+            -   [Including Mate
+                provisioning](#including-mate-provisioning)
+        -   [Mass Loss](#mass-loss)
             -   [Mass loss distribution](#mass-loss-distribution)
             -   [Mass loss models](#mass-loss-models)
     -   [BKA and reproductive success](#bka-and-reproductive-success)
         -   [Fledging success](#fledging-success)
             -   [Fleding success models](#fleding-success-models)
         -   [Number of nestlings fledged](#number-of-nestlings-fledged)
-            -   [Number fledged distribution](#number-fledged-distribution)
+            -   [Number fledged
+                distribution](#number-fledged-distribution)
             -   [Number fledged models](#number-fledged-models)
         -   [Nestling mass](#nestling-mass)
-            -   [Nestling mass distribution](#nestling-mass-distribution)
+            -   [Nestling mass
+                distribution](#nestling-mass-distribution)
             -   [Nestling mass models](#nestling-mass-models)
+    -   [Survival](#survival)
+        -   [2020 Return Rate](#2020-return-rate)
+            -   [Return rate models](#return-rate-models)
 -   [References](#references)
 
-Goals and Hypotheses
-====================
+# Method assessment
 
-The general paradigm states that immunity trades off with life history traits. The rationale is that any energy and resources invested on immunity comes off from other bodily functions like reproduction. Here we aim to look for evidence between innate immunity and life history trade-offs in Tree Swallows (TRES, *Tachycineta bicolor*).
-
-We have 3 central hypotheses to evaluate:
-
-1.  Immunity trades off with the physiological response to stressors
-2.  Immunity trades off with reproductive effort
-3.  Trade-offs between immunity and reproductive effort lead to costs to reproductive success
-
-We use bactericidal ability of plasma as a measure of innate immunity. bactericidal ability using blood plasma is a complement-dependent process.
-
-Methods
-=======
-
-We performed 61 Bacteria Killing Assays (BKA) using fresh plasma from 60 female breeding TRES. We diluted 5 *μ*L of plasma in 95 *μ*L of CO2-independent medium. We then diluted it further to a 1.25% plasma-medium dilution. Each sample was then challenged with PBS containing 82 to 670 *Escherichia coli* ATCC 8739 (Microbiologics, Epower *E. coli* ATCC 8739) and left to incubate for 45 minutes in a water bath at 40° C. We then plated 50 *μ*L of the sample on a petri dish with Tryptic Soy Agar and incubated these for 12h at 37° C. We counted all the colonies that grew overnight. Each sample was challenged twice and each challenge was plated in two petri dishes. We calculated bactericidal ability as the proportion of bacteria killed based on a challenge with no plasma. The data in this study is the average of those data counts.
-
-Assay repeatability
--------------------
-
-We our data to assess assay repeatability across plates and sample dilutions.
+## Assay repeatability
 
 ``` r
 # Repeatability by plate
@@ -95,87 +84,47 @@ rxnrep <- reps %>%
 grid.arrange(pseurep, rxnrep, ncol = 2)
 ```
 
-<img src="BKA_laydate_tradeoffs_files/figure-markdown_github/repeatability-1.png" style="display: block; margin: auto;" />
+<img src="BKA_laydate_tradeoffs_files/figure-gfm/repeatability-1.png" style="display: block; margin: auto;" />
 
-Sample type comparison
-----------------------
-
-Since a subset of plasma samples were taken from blood samples taken 30 minutes after disturbance, we evaluated if there was a difference in BKA between these sample types.
+## Treament type comparisons
 
 ``` r
 # Boxplot
-bk %>%
-  group_by(Individual_Band, bleed.type) %>%
-  ggplot() + geom_boxplot(aes(x = bleed.type, y = bkc, fill=bleed.type), 
-                          size = 1, width = 0.25) +
+df %>% 
+  mutate(timing = as.factor(
+    ifelse(Experiment == "Water", "30 minutes", "<3 minutes")
+  )) %>% 
+  ggplot() +
+  geom_boxplot(aes(x = Treatment2, y = Bacteria_Killing_Assay),
+               size = 1, width = 0.25, fill = "grey") +
+  geom_point(aes(x = Treatment2, y = Bacteria_Killing_Assay), 
+             position = position_jitter(width = 0.1)) +
   theme(panel.background = element_rect(fill=NA),
         axis.line = element_line(size=1),
-        legend.position = "none") +
-  labs(x = "Sample timing", y = "Prop. Bacteria Killed") +
-  scale_x_discrete(labels = c("< 3 minutes", "30 min"))
+        legend.position = "none",
+        legend.title.align = 0.5,
+        legend.background = element_rect(fill=NA),
+        axis.text.x=element_text(angle=20,hjust=1)) +
+  scale_x_discrete(labels = c("Predator-Dull", "Predator-Control", "Long-term Control", "Control-Control", "Control-Dull")) +
+  labs(x = "Timing of Blood Sample",
+       y = "Prop. of Bacteria Killed")
 ```
 
-<img src="BKA_laydate_tradeoffs_files/figure-markdown_github/water to land comparison-1.png" style="display: block; margin: auto;" />
+<img src="BKA_laydate_tradeoffs_files/figure-gfm/treatment comparison-1.png" style="display: block; margin: auto;" />
 
 ``` r
 # T-test
-t.test(bkc~ bleed.type, 
-       data = bk %>% group_by(Individual_Band, bleed.type) %>% 
-         summarise(bkc=mean(bkc))
-       ) %>% tidy() %>% kable()
+bka_mod1 <- lm(bk ~ Treatment2, data = df)
+summary(aov(bk ~ Treatment2, data = df))
 ```
 
-    ## `summarise()` has grouped output by 'Individual_Band'. You can override using the `.groups` argument.
-    ## `summarise()` has grouped output by 'Individual_Band'. You can override using the `.groups` argument.
+    ##             Df Sum Sq Mean Sq F value Pr(>F)
+    ## Treatment2   4  0.158 0.03944   0.314  0.868
+    ## Residuals   55  6.917 0.12576
 
-<table style="width:100%;">
-<colgroup>
-<col width="8%" />
-<col width="8%" />
-<col width="8%" />
-<col width="8%" />
-<col width="8%" />
-<col width="8%" />
-<col width="9%" />
-<col width="8%" />
-<col width="19%" />
-<col width="10%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th align="right">estimate</th>
-<th align="right">estimate1</th>
-<th align="right">estimate2</th>
-<th align="right">statistic</th>
-<th align="right">p.value</th>
-<th align="right">parameter</th>
-<th align="right">conf.low</th>
-<th align="right">conf.high</th>
-<th align="left">method</th>
-<th align="left">alternative</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="right">0.0127871</td>
-<td align="right">0.4938199</td>
-<td align="right">0.4810328</td>
-<td align="right">0.1436736</td>
-<td align="right">0.8864195</td>
-<td align="right">43.64869</td>
-<td align="right">-0.1666234</td>
-<td align="right">0.1921976</td>
-<td align="left">Welch Two Sample t-test</td>
-<td align="left">two.sided</td>
-</tr>
-</tbody>
-</table>
+# Results
 
-Results
-=======
-
-BKA in our population
----------------------
+## BKA in our population
 
 ``` r
 bk %>%
@@ -190,7 +139,7 @@ bk %>%
   labs(x = "Prop. Bacteria Killed", y = "No. of individuals")
 ```
 
-<img src="BKA_laydate_tradeoffs_files/figure-markdown_github/bka summary-1.png" style="display: block; margin: auto;" />
+<img src="BKA_laydate_tradeoffs_files/figure-gfm/bka summary-1.png" style="display: block; margin: auto;" />
 
 ``` r
 summ_bk <- group_by(bk, Individual_Band) %>% summarise(bkc = mean(bkc))
@@ -205,12 +154,11 @@ summ[1,6] <- max(summ_bk)
 kable(summ)
 ```
 
-|       Mean|       S.D.|       2.5%|      97.5%|        Min.|       Max.|
+|      Mean |      S.D. |      2.5% |     97.5% |       Min. |      Max. |
 |----------:|----------:|----------:|----------:|-----------:|----------:|
-|  0.4850821|  0.3462755|  0.3974623|  0.5727019|  -0.1838843|  281128707|
+| 0.4850821 | 0.3462755 | 0.3974623 | 0.5727019 | -0.1838843 | 281128707 |
 
-BKA and Reproductive Effort
----------------------------
+## BKA and Reproductive Effort
 
 ### General trend evaluation
 
@@ -218,13 +166,12 @@ BKA and Reproductive Effort
 
 ``` r
 summary(glm(bk ~ Age,  family=Gamma(link="inverse"),
-            data = filter(df, Capture_Number == 1),))
+            data = df))
 ```
 
     ## 
     ## Call:
-    ## glm(formula = bk ~ Age, family = Gamma(link = "inverse"), data = filter(df, 
-    ##     Capture_Number == 1))
+    ## glm(formula = bk ~ Age, family = Gamma(link = "inverse"), data = df)
     ## 
     ## Deviance Residuals: 
     ##     Min       1Q   Median       3Q      Max  
@@ -249,29 +196,28 @@ summary(glm(bk ~ Age,  family=Gamma(link="inverse"),
 
 ``` r
 summary(glm(bk ~ ylaydate, family = Gamma(link="inverse"),
-                  data = filter(df, Capture_Number == 1)))
+                  data = df))
 ```
 
     ## 
     ## Call:
     ## glm(formula = bk ~ ylaydate, family = Gamma(link = "inverse"), 
-    ##     data = filter(df, Capture_Number == 1))
+    ##     data = df)
     ## 
     ## Deviance Residuals: 
     ##     Min       1Q   Median       3Q      Max  
-    ## -2.1595  -0.6537  -0.1659   0.4226   1.2263  
+    ## -2.7590  -0.6939  -0.1986   0.4916   1.1956  
     ## 
     ## Coefficients:
     ##             Estimate Std. Error t value Pr(>|t|)
-    ## (Intercept) -6.14992    5.59583  -1.099    0.277
-    ## ylaydate     0.05848    0.04065   1.439    0.156
+    ## (Intercept) -5.48379    5.57535  -0.984    0.329
+    ## ylaydate     0.05364    0.04041   1.328    0.190
     ## 
-    ## (Dispersion parameter for Gamma family taken to be 0.4697353)
+    ## (Dispersion parameter for Gamma family taken to be 0.4847828)
     ## 
-    ##     Null deviance: 36.675  on 54  degrees of freedom
-    ## Residual deviance: 35.685  on 53  degrees of freedom
-    ##   (5 observations deleted due to missingness)
-    ## AIC: 35.121
+    ##     Null deviance: 46.235  on 59  degrees of freedom
+    ## Residual deviance: 45.375  on 58  degrees of freedom
+    ## AIC: 41.06
     ## 
     ## Number of Fisher Scoring iterations: 6
 
@@ -280,19 +226,18 @@ summary(glm(bk ~ ylaydate, family = Gamma(link="inverse"),
 #### Clutch size data distribution
 
 ``` r
-ggplot(filter(df,Capture_Number == 1) ) +
-                 geom_histogram(aes(x=Clutch_Size), 
-                                colour = "white", bins = 15) +
-                 theme(panel.background = element_rect(fill=NA),
-                       axis.line = element_line(size=1)) +
-                 scale_y_continuous(expand = c(0,0)) +
-                 labs(x= "Clutch size",
-                      y = "No. of individuals") +
-                 scale_x_continuous(limits = c(0,8),
+ggplot(df) +
+  geom_histogram(aes(x=Clutch_Size), colour = "white", bins = 15) +
+  theme(panel.background = element_rect(fill=NA),
+        axis.line = element_line(size=1)) +
+  scale_y_continuous(expand = c(0,0)) +
+  labs(x= "Clutch size",
+       y = "No. of individuals") +
+  scale_x_continuous(limits = c(0,8),
                                     breaks = 1:8)
 ```
 
-<img src="BKA_laydate_tradeoffs_files/figure-markdown_github/clutch distribution-1.png" style="display: block; margin: auto;" />
+<img src="BKA_laydate_tradeoffs_files/figure-gfm/clutch distribution-1.png" style="display: block; margin: auto;" />
 
 #### Clutch size models
 
@@ -301,32 +246,31 @@ ggplot(filter(df,Capture_Number == 1) ) +
 ``` r
 clutch_m1 <- glm(Clutch_Size ~ Age + ylaydate,
                 family = quasipoisson(link = "log"), 
-                data = filter(df, Capture_Number == 1))
+                data = df)
 summary(clutch_m1)
 ```
 
     ## 
     ## Call:
     ## glm(formula = Clutch_Size ~ Age + ylaydate, family = quasipoisson(link = "log"), 
-    ##     data = filter(df, Capture_Number == 1))
+    ##     data = df)
     ## 
     ## Deviance Residuals: 
     ##      Min        1Q    Median        3Q       Max  
-    ## -1.46797  -0.22972   0.01604   0.19413   0.77806  
+    ## -1.49967  -0.20721   0.01626   0.19048   0.79329  
     ## 
     ## Coefficients:
     ##              Estimate Std. Error t value Pr(>|t|)    
-    ## (Intercept)  3.776722   0.629594   5.999 1.93e-07 ***
-    ## AgeSY       -0.074761   0.041605  -1.797  0.07815 .  
-    ## ylaydate    -0.014752   0.004565  -3.231  0.00214 ** 
+    ## (Intercept)  3.692395   0.610564   6.048  1.2e-07 ***
+    ## AgeSY       -0.091341   0.039065  -2.338  0.02291 *  
+    ## ylaydate    -0.014077   0.004417  -3.187  0.00234 ** 
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## (Dispersion parameter for quasipoisson family taken to be 0.121536)
+    ## (Dispersion parameter for quasipoisson family taken to be 0.1175148)
     ## 
-    ##     Null deviance: 8.6696  on 54  degrees of freedom
-    ## Residual deviance: 6.7753  on 52  degrees of freedom
-    ##   (5 observations deleted due to missingness)
+    ##     Null deviance: 9.2551  on 59  degrees of freedom
+    ## Residual deviance: 7.1867  on 57  degrees of freedom
     ## AIC: NA
     ## 
     ## Number of Fisher Scoring iterations: 4
@@ -336,34 +280,32 @@ summary(clutch_m1)
 ``` r
 clutch_m2 <- glm(Clutch_Size ~ Bacteria_Killing_Assay + Age + ylaydate,
                 family = quasipoisson(link = "log"), 
-                data = filter(df, Capture_Number == 1))
+                data = df)
 summary(clutch_m2)
 ```
 
     ## 
     ## Call:
     ## glm(formula = Clutch_Size ~ Bacteria_Killing_Assay + Age + ylaydate, 
-    ##     family = quasipoisson(link = "log"), data = filter(df, Capture_Number == 
-    ##         1))
+    ##     family = quasipoisson(link = "log"), data = df)
     ## 
     ## Deviance Residuals: 
     ##      Min        1Q    Median        3Q       Max  
-    ## -1.43952  -0.22135   0.02294   0.18031   0.76309  
+    ## -1.44530  -0.19636   0.02834   0.16755   0.76566  
     ## 
     ## Coefficients:
-    ##                         Estimate Std. Error t value Pr(>|t|)    
-    ## (Intercept)             3.711299   0.641239   5.788  4.4e-07 ***
-    ## Bacteria_Killing_Assay -0.039756   0.061788  -0.643  0.52283    
-    ## AgeSY                  -0.073514   0.041917  -1.754  0.08547 .  
-    ## ylaydate               -0.014149   0.004685  -3.020  0.00395 ** 
+    ##                        Estimate Std. Error t value Pr(>|t|)    
+    ## (Intercept)             3.60270    0.61444   5.863 2.53e-07 ***
+    ## Bacteria_Killing_Assay -0.06489    0.05703  -1.138   0.2600    
+    ## AgeSY                  -0.08525    0.03941  -2.163   0.0348 *  
+    ## ylaydate               -0.01323    0.00447  -2.961   0.0045 ** 
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## (Dispersion parameter for quasipoisson family taken to be 0.1231126)
+    ## (Dispersion parameter for quasipoisson family taken to be 0.1173973)
     ## 
-    ##     Null deviance: 8.6696  on 54  degrees of freedom
-    ## Residual deviance: 6.7245  on 51  degrees of freedom
-    ##   (5 observations deleted due to missingness)
+    ##     Null deviance: 9.2551  on 59  degrees of freedom
+    ## Residual deviance: 7.0351  on 56  degrees of freedom
     ## AIC: NA
     ## 
     ## Number of Fisher Scoring iterations: 4
@@ -373,35 +315,33 @@ summary(clutch_m2)
 ``` r
 clutch_m3 <- glm(Clutch_Size ~ Bacteria_Killing_Assay*ylaydate + Age,
                  family = quasipoisson(link = "log"), 
-                 data = filter(df, Capture_Number == 1))
+                 data = df)
 summary(clutch_m3)
 ```
 
     ## 
     ## Call:
     ## glm(formula = Clutch_Size ~ Bacteria_Killing_Assay * ylaydate + 
-    ##     Age, family = quasipoisson(link = "log"), data = filter(df, 
-    ##     Capture_Number == 1))
+    ##     Age, family = quasipoisson(link = "log"), data = df)
     ## 
     ## Deviance Residuals: 
     ##      Min        1Q    Median        3Q       Max  
-    ## -1.18351  -0.22477  -0.01424   0.20524   0.74097  
+    ## -1.18629  -0.20471   0.01383   0.17487   0.74587  
     ## 
     ## Coefficients:
     ##                                  Estimate Std. Error t value Pr(>|t|)  
-    ## (Intercept)                      2.043645   0.984603   2.076   0.0431 *
-    ## Bacteria_Killing_Assay           3.723148   1.723590   2.160   0.0356 *
-    ## ylaydate                        -0.002132   0.007127  -0.299   0.7661  
-    ## AgeSY                           -0.072106   0.041266  -1.747   0.0867 .
-    ## Bacteria_Killing_Assay:ylaydate -0.027018   0.012363  -2.185   0.0336 *
+    ## (Intercept)                      1.984922   0.938139   2.116   0.0389 *
+    ## Bacteria_Killing_Assay           3.663823   1.665632   2.200   0.0321 *
+    ## ylaydate                        -0.001609   0.006769  -0.238   0.8130  
+    ## AgeSY                           -0.081385   0.038846  -2.095   0.0408 *
+    ## Bacteria_Killing_Assay:ylaydate -0.026740   0.011934  -2.241   0.0291 *
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## (Dispersion parameter for quasipoisson family taken to be 0.1187467)
+    ## (Dispersion parameter for quasipoisson family taken to be 0.1133617)
     ## 
-    ##     Null deviance: 8.6696  on 54  degrees of freedom
-    ## Residual deviance: 6.1541  on 50  degrees of freedom
-    ##   (5 observations deleted due to missingness)
+    ##     Null deviance: 9.2551  on 59  degrees of freedom
+    ## Residual deviance: 6.4620  on 55  degrees of freedom
     ## AIC: NA
     ## 
     ## Number of Fisher Scoring iterations: 4
@@ -412,21 +352,21 @@ summary(clutch_m3)
 # redefine models to poisson models
 clutch_m1p <- glm(Clutch_Size ~ Age + ylaydate,
                 family = poisson(link = "log"), 
-                data = filter(df, Capture_Number == 1))
+                data = df)
 clutch_m2p <- glm(Clutch_Size ~ Bacteria_Killing_Assay + Age + ylaydate,
                 family = poisson(link = "log"), 
-                data = filter(df, Capture_Number == 1))
+                data = df)
 clutch_m3p <- glm(Clutch_Size ~ Bacteria_Killing_Assay*ylaydate + Age,
                  family = poisson(link = "log"), 
-                 data = filter(df, Capture_Number == 1))
+                 data = df)
 
-ICtab(clutch_m1p, clutch_m2p, clutch_m3p, dispersion = dfun(clutch_m1p), type = "qAIC")
+ICtab(clutch_m1p, clutch_m2p, clutch_m3p, dispersion = dfun(clutch_m1p), type = "qAICc")
 ```
 
-    ##            dqAIC df
-    ## clutch_m3p 0.0   5 
-    ## clutch_m1p 1.1   3 
-    ## clutch_m2p 2.7   4
+    ##            dqAICc df
+    ## clutch_m3p 0.0    5 
+    ## clutch_m1p 1.3    3 
+    ## clutch_m2p 2.4    4
 
 ### Nestling Feeding Rate
 
@@ -436,19 +376,23 @@ ICtab(clutch_m1p, clutch_m2p, clutch_m3p, dispersion = dfun(clutch_m1p), type = 
 # Note that Offset refers to Nestling Age.
 
 ggplot(rfid_d) + 
-  geom_point(aes(x= Offset, y = FemFeed, color = f_rfid), show.legend = F) + 
-  geom_line(aes(x= Offset, y = FemFeed, color = f_rfid), show.legend = F) +
+  geom_point(aes(x= Offset, y = FemFeed, group = f_rfid), alpha = 0.1, show.legend = F) + 
+  geom_line(aes(x= Offset, y = FemFeed, group = f_rfid), alpha = 0.1, show.legend = F) +
+  geom_boxplot(aes(x = Offset, y = FemFeed, group = as.factor(Offset), fill = as.factor(Offset)),
+               width = 0.3) +
   scale_x_continuous(expand = c(0,0), limits = c(0,20)) +
   scale_y_continuous(expand = c(0,0)) +
   theme(panel.background = element_rect(fill=NA),
         axis.line = element_line(size=1),
         legend.position = "none") +
   labs(title="Daily provisioning visits per female",
-       x = "Nestling Age",
-       y = "Number of visits")
+       x = "Nestling Age (days)",
+       y = "Number of visits per day")
 ```
 
-<img src="BKA_laydate_tradeoffs_files/figure-markdown_github/visits variation-1.png" style="display: block; margin: auto;" /> \#\#\#\# Feeding Rate models
+<img src="BKA_laydate_tradeoffs_files/figure-gfm/visits variation-1.png" style="display: block; margin: auto;" />
+
+#### Feeding Rate models
 
 ``` r
 scaled_pc <- pc %>%
@@ -641,13 +585,13 @@ summary(provisioning_m3)
 ###### Model comparison
 
 ``` r
-ICtab(provisioning_m1, provisioning_m2, provisioning_m3, type = "AIC")
+ICtab(provisioning_m1, provisioning_m2, provisioning_m3, type = "AICc")
 ```
 
-    ##                 dAIC df
-    ## provisioning_m2  0.0 15
-    ## provisioning_m3  1.5 16
-    ## provisioning_m1  3.5 14
+    ##                 dAICc df
+    ## provisioning_m2  0.0  15
+    ## provisioning_m3  1.5  16
+    ## provisioning_m1  3.5  14
 
 #### Including Mate provisioning
 
@@ -838,17 +782,12 @@ ICtab(provisioning_m4, provisioning_m5, provisioning_m6, type = "AIC")
     ## provisioning_m5  1.0 16
     ## provisioning_m6  2.6 17
 
-### Seasonal Mass Loss
+### Mass Loss
 
 #### Mass loss distribution
 
 ``` r
-df_massloss <- left_join(filter(df, Experiment == "Color_Stressor", Capture_Number == 1),
-          dplyr::select(filter(df, Experiment == "Color_Stressor", Capture_Number == 3), Individual_Band, Mass), 
-          by = "Individual_Band") %>%
-  mutate(prop.ml = (Mass.y - Mass.x)/Mass.x)
-
-ggplot(df_massloss) +
+ggplot(df) +
   geom_histogram(aes(x=prop.ml),
                  colour = "white", bins = 15) +
   theme(panel.background = element_rect(fill=NA),
@@ -858,7 +797,7 @@ ggplot(df_massloss) +
        y = "No. of individuals")
 ```
 
-<img src="BKA_laydate_tradeoffs_files/figure-markdown_github/mass loss histogram-1.png" style="display: block; margin: auto;" />
+<img src="BKA_laydate_tradeoffs_files/figure-gfm/mass loss histogram-1.png" style="display: block; margin: auto;" />
 
 #### Mass loss models
 
@@ -867,34 +806,34 @@ ggplot(df_massloss) +
 ``` r
 prop_mass_loss_m1 <- glm(prop.ml ~ ylaydate + Brood_Size_Hatching + Treatment2, 
                          family = gaussian(link = "identity"),
-                         data = df_massloss)
+                         data = df)
 summary(prop_mass_loss_m1)
 ```
 
     ## 
     ## Call:
     ## glm(formula = prop.ml ~ ylaydate + Brood_Size_Hatching + Treatment2, 
-    ##     family = gaussian(link = "identity"), data = df_massloss)
+    ##     family = gaussian(link = "identity"), data = df)
     ## 
     ## Deviance Residuals: 
     ##       Min         1Q     Median         3Q        Max  
-    ## -0.125458  -0.021655   0.000551   0.011703   0.136777  
+    ## -0.113319  -0.033811   0.002857   0.024224   0.167666  
     ## 
     ## Coefficients:
-    ##                             Estimate Std. Error t value Pr(>|t|)
-    ## (Intercept)                -0.438753   0.416215  -1.054    0.304
-    ## ylaydate                    0.002032   0.002805   0.725    0.477
-    ## Brood_Size_Hatching        -0.003067   0.014558  -0.211    0.835
-    ## Treatment2Predator_Control  0.038530   0.033879   1.137    0.268
-    ## Treatment2Control_Control   0.054186   0.037076   1.461    0.159
-    ## Treatment2Control_Dull     -0.047833   0.039844  -1.201    0.243
+    ##                              Estimate Std. Error t value Pr(>|t|)
+    ## (Intercept)                -0.2608728  0.3981631  -0.655    0.518
+    ## ylaydate                    0.0008605  0.0027244   0.316    0.755
+    ## Brood_Size_Hatching        -0.0048227  0.0127106  -0.379    0.707
+    ## Treatment2Predator_Control  0.0073017  0.0312655   0.234    0.817
+    ## Treatment2Control_Control   0.0387403  0.0331994   1.167    0.254
+    ## Treatment2Control_Dull     -0.0549700  0.0380404  -1.445    0.160
     ## 
-    ## (Dispersion parameter for gaussian family taken to be 0.003748391)
+    ## (Dispersion parameter for gaussian family taken to be 0.004192246)
     ## 
-    ##     Null deviance: 0.117014  on 26  degrees of freedom
-    ## Residual deviance: 0.078716  on 21  degrees of freedom
-    ##   (13 observations deleted due to missingness)
-    ## AIC: -66.996
+    ##     Null deviance: 0.13787  on 31  degrees of freedom
+    ## Residual deviance: 0.10900  on 26  degrees of freedom
+    ##   (28 observations deleted due to missingness)
+    ## AIC: -77.017
     ## 
     ## Number of Fisher Scoring iterations: 2
 
@@ -903,35 +842,35 @@ summary(prop_mass_loss_m1)
 ``` r
 prop_mass_loss_m2 <- glm(prop.ml ~ Bacteria_Killing_Assay + ylaydate + Brood_Size_Hatching + Treatment2, 
                          family = gaussian(link = "identity"),
-                         data = df_massloss)
+                         data = df)
 summary(prop_mass_loss_m2)
 ```
 
     ## 
     ## Call:
     ## glm(formula = prop.ml ~ Bacteria_Killing_Assay + ylaydate + Brood_Size_Hatching + 
-    ##     Treatment2, family = gaussian(link = "identity"), data = df_massloss)
+    ##     Treatment2, family = gaussian(link = "identity"), data = df)
     ## 
     ## Deviance Residuals: 
-    ##       Min         1Q     Median         3Q        Max  
-    ## -0.108593  -0.026716   0.005867   0.020011   0.107763  
+    ##      Min        1Q    Median        3Q       Max  
+    ## -0.11390  -0.03648   0.01116   0.02438   0.14134  
     ## 
     ## Coefficients:
     ##                             Estimate Std. Error t value Pr(>|t|)
-    ## (Intercept)                -0.672249   0.443779  -1.515    0.145
-    ## Bacteria_Killing_Assay     -0.052293   0.038876  -1.345    0.194
-    ## ylaydate                    0.003795   0.003049   1.245    0.228
-    ## Brood_Size_Hatching         0.001674   0.014714   0.114    0.911
-    ## Treatment2Predator_Control  0.025108   0.034709   0.723    0.478
-    ## Treatment2Control_Control   0.053084   0.036391   1.459    0.160
-    ## Treatment2Control_Dull     -0.057141   0.039705  -1.439    0.166
+    ## (Intercept)                -0.415451   0.397010  -1.046    0.305
+    ## Bacteria_Killing_Assay     -0.055859   0.033967  -1.644    0.113
+    ## ylaydate                    0.002187   0.002760   0.792    0.436
+    ## Brood_Size_Hatching        -0.004754   0.012314  -0.386    0.703
+    ## Treatment2Predator_Control -0.001435   0.030751  -0.047    0.963
+    ## Treatment2Control_Control   0.044602   0.032359   1.378    0.180
+    ## Treatment2Control_Dull     -0.057877   0.036894  -1.569    0.129
     ## 
-    ## (Dispersion parameter for gaussian family taken to be 0.003609295)
+    ## (Dispersion parameter for gaussian family taken to be 0.003934348)
     ## 
-    ##     Null deviance: 0.117014  on 26  degrees of freedom
-    ## Residual deviance: 0.072186  on 20  degrees of freedom
-    ##   (13 observations deleted due to missingness)
-    ## AIC: -67.335
+    ##     Null deviance: 0.137868  on 31  degrees of freedom
+    ## Residual deviance: 0.098359  on 25  degrees of freedom
+    ##   (28 observations deleted due to missingness)
+    ## AIC: -78.304
     ## 
     ## Number of Fisher Scoring iterations: 2
 
@@ -940,52 +879,51 @@ summary(prop_mass_loss_m2)
 ``` r
 prop_mass_loss_m3 <- glm(prop.ml ~ Bacteria_Killing_Assay*ylaydate + Brood_Size_Hatching + Treatment2, 
                          family = gaussian(link = "identity"),
-                         data = df_massloss)
+                         data = df)
 summary(prop_mass_loss_m3)
 ```
 
     ## 
     ## Call:
     ## glm(formula = prop.ml ~ Bacteria_Killing_Assay * ylaydate + Brood_Size_Hatching + 
-    ##     Treatment2, family = gaussian(link = "identity"), data = df_massloss)
+    ##     Treatment2, family = gaussian(link = "identity"), data = df)
     ## 
     ## Deviance Residuals: 
     ##       Min         1Q     Median         3Q        Max  
-    ## -0.099935  -0.024376   0.006448   0.024242   0.091149  
+    ## -0.111031  -0.038201   0.008797   0.029682   0.119833  
     ## 
     ## Coefficients:
     ##                                  Estimate Std. Error t value Pr(>|t|)
-    ## (Intercept)                     -1.027442   0.614107  -1.673    0.111
-    ## Bacteria_Killing_Assay           1.039595   1.295010   0.803    0.432
-    ## ylaydate                         0.006564   0.004495   1.460    0.161
-    ## Brood_Size_Hatching             -0.005708   0.017212  -0.332    0.744
-    ## Treatment2Predator_Control       0.036310   0.037399   0.971    0.344
-    ## Treatment2Control_Control        0.059453   0.037426   1.589    0.129
-    ## Treatment2Control_Dull          -0.040657   0.044513  -0.913    0.372
-    ## Bacteria_Killing_Assay:ylaydate -0.007864   0.009323  -0.844    0.409
+    ## (Intercept)                     -0.852603   0.599812  -1.421    0.168
+    ## Bacteria_Killing_Assay           1.231646   1.323565   0.931    0.361
+    ## ylaydate                         0.005564   0.004436   1.254    0.222
+    ## Brood_Size_Hatching             -0.012628   0.014745  -0.856    0.400
+    ## Treatment2Predator_Control       0.011692   0.033610   0.348    0.731
+    ## Treatment2Control_Control        0.050271   0.032913   1.527    0.140
+    ## Treatment2Control_Dull          -0.039845   0.041321  -0.964    0.345
+    ## Bacteria_Killing_Assay:ylaydate -0.009272   0.009529  -0.973    0.340
     ## 
-    ## (Dispersion parameter for gaussian family taken to be 0.003662112)
+    ## (Dispersion parameter for gaussian family taken to be 0.003942726)
     ## 
-    ##     Null deviance: 0.11701  on 26  degrees of freedom
-    ## Residual deviance: 0.06958  on 19  degrees of freedom
-    ##   (13 observations deleted due to missingness)
-    ## AIC: -66.327
+    ##     Null deviance: 0.137868  on 31  degrees of freedom
+    ## Residual deviance: 0.094625  on 24  degrees of freedom
+    ##   (28 observations deleted due to missingness)
+    ## AIC: -77.542
     ## 
     ## Number of Fisher Scoring iterations: 2
 
 ##### Model comparison
 
 ``` r
-ICtab(prop_mass_loss_m1, prop_mass_loss_m2, prop_mass_loss_m3, type = "AIC")
+ICtab(prop_mass_loss_m1, prop_mass_loss_m2, prop_mass_loss_m3, type = "AICc")
 ```
 
-    ##                   dAIC df
-    ## prop_mass_loss_m2 0.0  8 
-    ## prop_mass_loss_m1 0.3  7 
-    ## prop_mass_loss_m3 1.0  9
+    ##                   dAICc df
+    ## prop_mass_loss_m1 0.0   7 
+    ## prop_mass_loss_m2 0.3   8 
+    ## prop_mass_loss_m3 3.0   9
 
-BKA and reproductive success
-----------------------------
+## BKA and reproductive success
 
 ### Fledging success
 
@@ -994,81 +932,76 @@ BKA and reproductive success
 ##### Null model
 
 ``` r
-success_m1 <- glm(Success ~ Brood_Size_Hatching + ylaydate + Treatment2, 
+success_m1 <- glm(success ~ Brood_Size_Hatching + ylaydate + Treatment2, 
                   family = binomial(link = "logit"), 
-                  data = filter(df, Capture_Number == 1) %>%
-                    mutate(Success = ifelse(Nest_Fate == "Fledged", 1, 0)))
+                  data = df )
 summary(success_m1)
 ```
 
     ## 
     ## Call:
-    ## glm(formula = Success ~ Brood_Size_Hatching + ylaydate + Treatment2, 
-    ##     family = binomial(link = "logit"), data = filter(df, Capture_Number == 
-    ##         1) %>% mutate(Success = ifelse(Nest_Fate == "Fledged", 
-    ##         1, 0)))
+    ## glm(formula = success ~ Brood_Size_Hatching + ylaydate + Treatment2, 
+    ##     family = binomial(link = "logit"), data = df)
     ## 
     ## Deviance Residuals: 
     ##     Min       1Q   Median       3Q      Max  
-    ## -1.8221  -1.0034   0.6472   0.8764   1.4416  
+    ## -1.8744  -1.0280   0.6686   0.8348   1.3522  
     ## 
     ## Coefficients:
     ##                              Estimate Std. Error z value Pr(>|z|)
-    ## (Intercept)                  -1.75366   12.32632  -0.142    0.887
-    ## Brood_Size_Hatching           0.05574    0.34680   0.161    0.872
-    ## ylaydate                      0.01610    0.08565   0.188    0.851
-    ## Treatment2Predator_Control   -1.12542    1.09540  -1.027    0.304
-    ## Treatment2Water               0.62160    1.09624   0.567    0.571
-    ## Treatment2Control_Control    -0.03648    1.17826  -0.031    0.975
-    ## Treatment2Control_Dull       16.81648 1768.53103   0.010    0.992
+    ## (Intercept)                 3.982e-01  1.164e+01   0.034    0.973
+    ## Brood_Size_Hatching        -5.352e-02  3.159e-01  -0.169    0.865
+    ## ylaydate                    2.454e-03  8.129e-02   0.030    0.976
+    ## Treatment2Predator_Control -8.252e-01  9.444e-01  -0.874    0.382
+    ## Treatment2Water             9.152e-01  9.546e-01   0.959    0.338
+    ## Treatment2Control_Control   3.814e-01  1.038e+00   0.368    0.713
+    ## Treatment2Control_Dull      1.710e+01  1.769e+03   0.010    0.992
     ## 
     ## (Dispersion parameter for binomial family taken to be 1)
     ## 
-    ##     Null deviance: 61.086  on 49  degrees of freedom
-    ## Residual deviance: 52.524  on 43  degrees of freedom
-    ##   (10 observations deleted due to missingness)
-    ## AIC: 66.524
+    ##     Null deviance: 68.021  on 54  degrees of freedom
+    ## Residual deviance: 59.086  on 48  degrees of freedom
+    ##   (5 observations deleted due to missingness)
+    ## AIC: 73.086
     ## 
     ## Number of Fisher Scoring iterations: 16
 
 ##### BKA model
 
 ``` r
-success_m2 <- glm(Success ~ Bacteria_Killing_Assay + Brood_Size_Hatching + 
+success_m2 <- glm(success ~ Bacteria_Killing_Assay + Brood_Size_Hatching + 
                     ylaydate + Treatment2, family = binomial(link = "logit"), 
-                  data = filter(df, Capture_Number == 1) %>%
-                    mutate(Success = ifelse(Nest_Fate == "Fledged", 1, 0)))
+                  data = df )
 summary(success_m2)
 ```
 
     ## 
     ## Call:
-    ## glm(formula = Success ~ Bacteria_Killing_Assay + Brood_Size_Hatching + 
+    ## glm(formula = success ~ Bacteria_Killing_Assay + Brood_Size_Hatching + 
     ##     ylaydate + Treatment2, family = binomial(link = "logit"), 
-    ##     data = filter(df, Capture_Number == 1) %>% mutate(Success = ifelse(Nest_Fate == 
-    ##         "Fledged", 1, 0)))
+    ##     data = df)
     ## 
     ## Deviance Residuals: 
     ##     Min       1Q   Median       3Q      Max  
-    ## -1.8684  -0.8746   0.5411   0.8639   1.7029  
+    ## -1.8208  -0.9654   0.5924   0.8283   1.4999  
     ## 
     ## Coefficients:
     ##                              Estimate Std. Error z value Pr(>|z|)
-    ## (Intercept)                  -6.22877   12.94059  -0.481    0.630
-    ## Bacteria_Killing_Assay       -1.66241    1.22568  -1.356    0.175
-    ## Brood_Size_Hatching           0.15947    0.35284   0.452    0.651
-    ## ylaydate                      0.05236    0.09117   0.574    0.566
-    ## Treatment2Predator_Control   -1.47192    1.15418  -1.275    0.202
-    ## Treatment2Water               0.38255    1.10371   0.347    0.729
-    ## Treatment2Control_Control    -0.15251    1.19423  -0.128    0.898
-    ## Treatment2Control_Dull       16.65114 1697.89894   0.010    0.992
+    ## (Intercept)                  -1.11606   11.87824  -0.094    0.925
+    ## Bacteria_Killing_Assay       -0.90123    1.02150  -0.882    0.378
+    ## Brood_Size_Hatching          -0.03889    0.31814  -0.122    0.903
+    ## ylaydate                      0.01649    0.08358   0.197    0.844
+    ## Treatment2Predator_Control   -0.94767    0.97092  -0.976    0.329
+    ## Treatment2Water               0.83899    0.96750   0.867    0.386
+    ## Treatment2Control_Control     0.39138    1.05041   0.373    0.709
+    ## Treatment2Control_Dull       17.04807 1745.28325   0.010    0.992
     ## 
     ## (Dispersion parameter for binomial family taken to be 1)
     ## 
-    ##     Null deviance: 61.086  on 49  degrees of freedom
-    ## Residual deviance: 50.525  on 42  degrees of freedom
-    ##   (10 observations deleted due to missingness)
-    ## AIC: 66.525
+    ##     Null deviance: 68.021  on 54  degrees of freedom
+    ## Residual deviance: 58.281  on 47  degrees of freedom
+    ##   (5 observations deleted due to missingness)
+    ## AIC: 74.281
     ## 
     ## Number of Fisher Scoring iterations: 16
 
@@ -1078,7 +1011,7 @@ summary(success_m2)
 success_m3 <- glm(Success ~ Bacteria_Killing_Assay*ylaydate + 
                     Brood_Size_Hatching + Treatment2, 
                   family = binomial(link = "logit"), 
-                  data = filter(df, Capture_Number == 1) %>%
+                  data = df %>%
                     mutate(Success = ifelse(Nest_Fate == "Fledged", 1, 0)))
 summary(success_m3)
 ```
@@ -1086,52 +1019,51 @@ summary(success_m3)
     ## 
     ## Call:
     ## glm(formula = Success ~ Bacteria_Killing_Assay * ylaydate + Brood_Size_Hatching + 
-    ##     Treatment2, family = binomial(link = "logit"), data = filter(df, 
-    ##     Capture_Number == 1) %>% mutate(Success = ifelse(Nest_Fate == 
-    ##     "Fledged", 1, 0)))
+    ##     Treatment2, family = binomial(link = "logit"), data = df %>% 
+    ##     mutate(Success = ifelse(Nest_Fate == "Fledged", 1, 0)))
     ## 
     ## Deviance Residuals: 
     ##     Min       1Q   Median       3Q      Max  
-    ## -1.8693  -0.8700   0.5403   0.8551   1.6906  
+    ## -1.8209  -0.9651   0.5924   0.8285   1.4993  
     ## 
     ## Coefficients:
     ##                                   Estimate Std. Error z value Pr(>|z|)
-    ## (Intercept)                       -5.13163   21.35244  -0.240    0.810
-    ## Bacteria_Killing_Assay            -4.35678   41.84226  -0.104    0.917
-    ## ylaydate                           0.04405    0.15762   0.279    0.780
-    ## Brood_Size_Hatching                0.17215    0.40411   0.426    0.670
-    ## Treatment2Predator_Control        -1.48935    1.18591  -1.256    0.209
-    ## Treatment2Water                    0.36792    1.12609   0.327    0.744
-    ## Treatment2Control_Control         -0.16261    1.20443  -0.135    0.893
-    ## Treatment2Control_Dull            16.62062 1696.09069   0.010    0.992
-    ## Bacteria_Killing_Assay:ylaydate    0.01945    0.30196   0.064    0.949
+    ## (Intercept)                     -1.053e+00  1.990e+01  -0.053    0.958
+    ## Bacteria_Killing_Assay          -1.060e+00  4.049e+01  -0.026    0.979
+    ## ylaydate                         1.602e-02  1.468e-01   0.109    0.913
+    ## Brood_Size_Hatching             -3.812e-02  3.729e-01  -0.102    0.919
+    ## Treatment2Predator_Control      -9.489e-01  1.017e+00  -0.933    0.351
+    ## Treatment2Water                  8.380e-01  1.001e+00   0.837    0.402
+    ## Treatment2Control_Control        3.908e-01  1.062e+00   0.368    0.713
+    ## Treatment2Control_Dull           1.705e+01  1.745e+03   0.010    0.992
+    ## Bacteria_Killing_Assay:ylaydate  1.143e-03  2.915e-01   0.004    0.997
     ## 
     ## (Dispersion parameter for binomial family taken to be 1)
     ## 
-    ##     Null deviance: 61.086  on 49  degrees of freedom
-    ## Residual deviance: 50.521  on 41  degrees of freedom
-    ##   (10 observations deleted due to missingness)
-    ## AIC: 68.521
+    ##     Null deviance: 68.021  on 54  degrees of freedom
+    ## Residual deviance: 58.281  on 46  degrees of freedom
+    ##   (5 observations deleted due to missingness)
+    ## AIC: 76.281
     ## 
     ## Number of Fisher Scoring iterations: 16
 
 ##### Model comparison
 
 ``` r
-ICtab(success_m1, success_m2, success_m3, type = "AIC")
+ICtab(success_m1, success_m2, success_m3, type = "AICc")
 ```
 
-    ##            dAIC df
-    ## success_m1 0    7 
-    ## success_m2 0    8 
-    ## success_m3 2    9
+    ##            dAICc df
+    ## success_m1 0.0   7 
+    ## success_m2 1.9   8 
+    ## success_m3 4.8   9
 
 ### Number of nestlings fledged
 
 #### Number fledged distribution
 
 ``` r
-ggplot(filter(df, Capture_Number == 1, .fledged > 0 )) +
+ggplot(filter(df, .fledged > 0 )) +
   geom_histogram(aes(x=.fledged),
                  colour = "white", bins = 15) +
   theme(panel.background = element_rect(fill=NA),
@@ -1141,43 +1073,45 @@ ggplot(filter(df, Capture_Number == 1, .fledged > 0 )) +
        y = "No. of individuals")
 ```
 
-<img src="BKA_laydate_tradeoffs_files/figure-markdown_github/fledged histogram-1.png" style="display: block; margin: auto;" />
+<img src="BKA_laydate_tradeoffs_files/figure-gfm/fledged histogram-1.png" style="display: block; margin: auto;" />
 
 #### Number fledged models
 
 ##### Null model
 
 ``` r
-fledged_m1 <- glm(.fledged ~ Brood_Size_Hatching + ylaydate +  Treatment, 
+fledged_m1 <- glm(.fledged ~ Brood_Size_Hatching + ylaydate +  Treatment2, 
                   family = quasipoisson(link = "log"), 
-                  data = filter(df, Capture_Number == 1, .fledged > 0 ) )
+                  data = filter(df, .fledged > 0 ) )
 summary(fledged_m1)
 ```
 
     ## 
     ## Call:
-    ## glm(formula = .fledged ~ Brood_Size_Hatching + ylaydate + Treatment, 
-    ##     family = quasipoisson(link = "log"), data = filter(df, Capture_Number == 
-    ##         1, .fledged > 0))
+    ## glm(formula = .fledged ~ Brood_Size_Hatching + ylaydate + Treatment2, 
+    ##     family = quasipoisson(link = "log"), data = filter(df, .fledged > 
+    ##         0))
     ## 
     ## Deviance Residuals: 
     ##     Min       1Q   Median       3Q      Max  
-    ## -1.7041  -0.3383   0.2093   0.4389   0.7845  
+    ## -1.5411  -0.2850   0.1599   0.4132   0.7797  
     ## 
     ## Coefficients:
-    ##                      Estimate Std. Error t value Pr(>|t|)  
-    ## (Intercept)         -2.039744   1.938177  -1.052   0.3007  
-    ## Brood_Size_Hatching  0.132490   0.060729   2.182   0.0368 *
-    ## ylaydate             0.019491   0.013408   1.454   0.1561  
-    ## TreatmentWater       0.107790   0.162092   0.665   0.5110  
-    ## TreatmentControl_    0.002313   0.169315   0.014   0.9892  
+    ##                            Estimate Std. Error t value Pr(>|t|)  
+    ## (Intercept)                -2.38563    1.90587  -1.252   0.2197  
+    ## Brood_Size_Hatching         0.14183    0.05698   2.489   0.0182 *
+    ## ylaydate                    0.02180    0.01326   1.645   0.1098  
+    ## Treatment2Predator_Control  0.06574    0.21351   0.308   0.7602  
+    ## Treatment2Water             0.08246    0.20080   0.411   0.6841  
+    ## Treatment2Control_Control   0.07124    0.21436   0.332   0.7418  
+    ## Treatment2Control_Dull     -0.11480    0.23288  -0.493   0.6254  
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## (Dispersion parameter for quasipoisson family taken to be 0.4076462)
+    ## (Dispersion parameter for quasipoisson family taken to be 0.4003495)
     ## 
-    ##     Null deviance: 18.683  on 35  degrees of freedom
-    ## Residual deviance: 14.407  on 31  degrees of freedom
+    ##     Null deviance: 19.605  on 38  degrees of freedom
+    ## Residual deviance: 14.525  on 32  degrees of freedom
     ## AIC: NA
     ## 
     ## Number of Fisher Scoring iterations: 4
@@ -1186,36 +1120,38 @@ summary(fledged_m1)
 
 ``` r
 fledged_m2 <- glm(.fledged ~ Bacteria_Killing_Assay + Brood_Size_Hatching + 
-                    ylaydate + Treatment, family = quasipoisson(link = "log"), 
-                  data = filter(df, Capture_Number == 1, .fledged > 0 ) )
+                    ylaydate + Treatment2, family = quasipoisson(link = "log"), 
+                  data = filter(df, .fledged > 0 ) )
 summary(fledged_m2)
 ```
 
     ## 
     ## Call:
     ## glm(formula = .fledged ~ Bacteria_Killing_Assay + Brood_Size_Hatching + 
-    ##     ylaydate + Treatment, family = quasipoisson(link = "log"), 
-    ##     data = filter(df, Capture_Number == 1, .fledged > 0))
+    ##     ylaydate + Treatment2, family = quasipoisson(link = "log"), 
+    ##     data = filter(df, .fledged > 0))
     ## 
     ## Deviance Residuals: 
     ##     Min       1Q   Median       3Q      Max  
-    ## -1.8247  -0.2897   0.1698   0.3922   0.8329  
+    ## -1.6369  -0.2827   0.1686   0.3872   0.8323  
     ## 
     ## Coefficients:
-    ##                        Estimate Std. Error t value Pr(>|t|)  
-    ## (Intercept)            -2.41057    1.97234  -1.222   0.2312  
-    ## Bacteria_Killing_Assay -0.15499    0.16181  -0.958   0.3458  
-    ## Brood_Size_Hatching     0.13745    0.06080   2.261   0.0312 *
-    ## ylaydate                0.02243    0.01373   1.633   0.1129  
-    ## TreatmentWater          0.10656    0.16171   0.659   0.5150  
-    ## TreatmentControl_       0.02440    0.17073   0.143   0.8873  
+    ##                             Estimate Std. Error t value Pr(>|t|)  
+    ## (Intercept)                -2.741354   1.938648  -1.414   0.1673  
+    ## Bacteria_Killing_Assay     -0.153011   0.160231  -0.955   0.3470  
+    ## Brood_Size_Hatching         0.147631   0.057386   2.573   0.0151 *
+    ## ylaydate                    0.024865   0.013609   1.827   0.0773 .
+    ## Treatment2Predator_Control  0.007871   0.222796   0.035   0.9720  
+    ## Treatment2Water             0.043265   0.205975   0.210   0.8350  
+    ## Treatment2Control_Control   0.066107   0.215119   0.307   0.7607  
+    ## Treatment2Control_Dull     -0.141857   0.235896  -0.601   0.5520  
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## (Dispersion parameter for quasipoisson family taken to be 0.4062788)
+    ## (Dispersion parameter for quasipoisson family taken to be 0.4011574)
     ## 
-    ##     Null deviance: 18.683  on 35  degrees of freedom
-    ## Residual deviance: 14.035  on 30  degrees of freedom
+    ##     Null deviance: 19.605  on 38  degrees of freedom
+    ## Residual deviance: 14.159  on 31  degrees of freedom
     ## AIC: NA
     ## 
     ## Number of Fisher Scoring iterations: 4
@@ -1224,38 +1160,40 @@ summary(fledged_m2)
 
 ``` r
 fledged_m3 <- glm(.fledged ~ Bacteria_Killing_Assay*ylaydate + 
-                    Brood_Size_Hatching + Treatment, 
+                    Brood_Size_Hatching + Treatment2, 
                   family = quasipoisson(link = "log"), 
-                  data = filter(df, Capture_Number == 1, .fledged > 0 ) )
+                  data = filter(df, .fledged > 0 ) )
 summary(fledged_m3)
 ```
 
     ## 
     ## Call:
     ## glm(formula = .fledged ~ Bacteria_Killing_Assay * ylaydate + 
-    ##     Brood_Size_Hatching + Treatment, family = quasipoisson(link = "log"), 
-    ##     data = filter(df, Capture_Number == 1, .fledged > 0))
+    ##     Brood_Size_Hatching + Treatment2, family = quasipoisson(link = "log"), 
+    ##     data = filter(df, .fledged > 0))
     ## 
     ## Deviance Residuals: 
     ##     Min       1Q   Median       3Q      Max  
-    ## -1.6236  -0.3044   0.1590   0.3946   0.7601  
+    ## -1.5004  -0.3345   0.1914   0.3913   0.7919  
     ## 
     ## Coefficients:
     ##                                 Estimate Std. Error t value Pr(>|t|)  
-    ## (Intercept)                     -4.59445    3.01651  -1.523   0.1386  
-    ## Bacteria_Killing_Assay           5.34354    5.63804   0.948   0.3511  
-    ## ylaydate                         0.03870    0.02179   1.776   0.0862 .
-    ## Brood_Size_Hatching              0.12296    0.06283   1.957   0.0600 .
-    ## TreatmentWater                   0.10235    0.16185   0.632   0.5321  
-    ## TreatmentControl_                0.03234    0.17234   0.188   0.8525  
-    ## Bacteria_Killing_Assay:ylaydate -0.03952    0.04049  -0.976   0.3372  
+    ## (Intercept)                     -4.60109    2.97687  -1.546   0.1327  
+    ## Bacteria_Killing_Assay           4.82774    5.92646   0.815   0.4217  
+    ## ylaydate                         0.03865    0.02153   1.795   0.0827 .
+    ## Brood_Size_Hatching              0.13058    0.06126   2.132   0.0413 *
+    ## Treatment2Predator_Control       0.04842    0.23090   0.210   0.8353  
+    ## Treatment2Water                  0.07023    0.20965   0.335   0.7400  
+    ## Treatment2Control_Control        0.07624    0.21742   0.351   0.7283  
+    ## Treatment2Control_Dull          -0.07905    0.24872  -0.318   0.7528  
+    ## Bacteria_Killing_Assay:ylaydate -0.03572    0.04248  -0.841   0.4071  
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## (Dispersion parameter for quasipoisson family taken to be 0.415453)
+    ## (Dispersion parameter for quasipoisson family taken to be 0.4100625)
     ## 
-    ##     Null deviance: 18.683  on 35  degrees of freedom
-    ## Residual deviance: 13.637  on 29  degrees of freedom
+    ##     Null deviance: 19.605  on 38  degrees of freedom
+    ## Residual deviance: 13.869  on 30  degrees of freedom
     ## AIC: NA
     ## 
     ## Number of Fisher Scoring iterations: 4
@@ -1266,29 +1204,29 @@ summary(fledged_m3)
 # redefine models to poisson
 fledged_m1p <- glm(.fledged ~ Brood_Size_Hatching + ylaydate +  Treatment, 
                   family = poisson(link = "log"), 
-                  data = filter(df, Capture_Number == 1, .fledged > 0 ) )
+                  data = filter(df, .fledged > 0 ) )
 fledged_m2p <- glm(.fledged ~ Bacteria_Killing_Assay + Brood_Size_Hatching + 
                     ylaydate + Treatment, family = poisson(link = "log"), 
-                  data = filter(df, Capture_Number == 1, .fledged > 0 ) )
+                  data = filter(df, .fledged > 0 ) )
 fledged_m3p <- glm(.fledged ~ Bacteria_Killing_Assay*ylaydate + 
                     Brood_Size_Hatching + Treatment, 
                   family = poisson(link = "log"), 
-                  data = filter(df, Capture_Number == 1, .fledged > 0 ) )
+                  data = filter(df, .fledged > 0 ) )
 
-ICtab(fledged_m1p, fledged_m2p, fledged_m3p, dispersion = dfun(fledged_m1p), type = "qAIC")
+ICtab(fledged_m1p, fledged_m2p, fledged_m3p, dispersion = dfun(fledged_m1p), type = "qAICc")
 ```
 
-    ##             dqAIC df
-    ## fledged_m1p 0.0   5 
-    ## fledged_m2p 1.1   6 
-    ## fledged_m3p 2.1   7
+    ##             dqAICc df
+    ## fledged_m1p 0.0    5 
+    ## fledged_m2p 2.2    6 
+    ## fledged_m3p 4.1    7
 
 ### Nestling mass
 
 #### Nestling mass distribution
 
 ``` r
-ggplot(filter(nd, Capture_Number == 1, Nestling_Fate == "Fledged")) +
+ggplot(filter(nd, Nestling_Fate == "Fledged")) +
   geom_histogram(aes(x = Nestling_Mass),
                  colour = "white", bins = 15) +
   theme(panel.background = element_rect(fill=NA),
@@ -1298,20 +1236,16 @@ ggplot(filter(nd, Capture_Number == 1, Nestling_Fate == "Fledged")) +
        y = "No. of individuals")
 ```
 
-<img src="BKA_laydate_tradeoffs_files/figure-markdown_github/nestling mass histogram-1.png" style="display: block; margin: auto;" />
+<img src="BKA_laydate_tradeoffs_files/figure-gfm/nestling mass histogram-1.png" style="display: block; margin: auto;" />
 
 #### Nestling mass models
 
 ##### Null model
 
 ``` r
-nd <- nd %>%
-  mutate(Unit_Box = paste(Site, Nest, sep = "_"))
-
-
 nestling_m1 <- lmer(Nestling_Mass ~ Brood_Size_Hatching + 
                      ylaydate + Treatment2 + temp + (1|Unit_Box), 
-                   data = filter(nd, Capture_Number == 1, 
+                   data = filter(nd, 
                                  Nestling_Fate == "Fledged",
                                  Bacteria_Killing_Assay != "NA") )
 summary(nestling_m1)
@@ -1321,8 +1255,7 @@ summary(nestling_m1)
     ## lmerModLmerTest]
     ## Formula: Nestling_Mass ~ Brood_Size_Hatching + ylaydate + Treatment2 +  
     ##     temp + (1 | Unit_Box)
-    ##    Data: 
-    ## filter(nd, Capture_Number == 1, Nestling_Fate == "Fledged", Bacteria_Killing_Assay !=  
+    ##    Data: filter(nd, Nestling_Fate == "Fledged", Bacteria_Killing_Assay !=  
     ##     "NA")
     ## 
     ## REML criterion at convergence: 562.2
@@ -1366,7 +1299,7 @@ summary(nestling_m1)
 nestling_m2 <- lmer(Nestling_Mass ~ Bacteria_Killing_Assay + 
                      Brood_Size_Hatching + temp +
                       ylaydate + Treatment2 + (1|Unit_Box), 
-                   data = filter(nd, Capture_Number == 1, 
+                   data = filter(nd, 
                                  Nestling_Fate == "Fledged",
                                  Bacteria_Killing_Assay != "NA") )
 summary(nestling_m2)
@@ -1376,8 +1309,7 @@ summary(nestling_m2)
     ## lmerModLmerTest]
     ## Formula: Nestling_Mass ~ Bacteria_Killing_Assay + Brood_Size_Hatching +  
     ##     temp + ylaydate + Treatment2 + (1 | Unit_Box)
-    ##    Data: 
-    ## filter(nd, Capture_Number == 1, Nestling_Fate == "Fledged", Bacteria_Killing_Assay !=  
+    ##    Data: filter(nd, Nestling_Fate == "Fledged", Bacteria_Killing_Assay !=  
     ##     "NA")
     ## 
     ## REML criterion at convergence: 560.4
@@ -1423,7 +1355,7 @@ summary(nestling_m2)
 nestling_m3 <- lmer(Nestling_Mass ~ Bacteria_Killing_Assay*ylaydate + 
                      Brood_Size_Hatching + temp +
                       Treatment2 + (1|Unit_Box), 
-                   data = filter(nd, Capture_Number == 1, 
+                   data = filter(nd, 
                                  Nestling_Fate == "Fledged",
                                  Bacteria_Killing_Assay != "NA") )
 summary(nestling_m3)
@@ -1434,8 +1366,7 @@ summary(nestling_m3)
     ## Formula: 
     ## Nestling_Mass ~ Bacteria_Killing_Assay * ylaydate + Brood_Size_Hatching +  
     ##     temp + Treatment2 + (1 | Unit_Box)
-    ##    Data: 
-    ## filter(nd, Capture_Number == 1, Nestling_Fate == "Fledged", Bacteria_Killing_Assay !=  
+    ##    Data: filter(nd, Nestling_Fate == "Fledged", Bacteria_Killing_Assay !=  
     ##     "NA")
     ## 
     ## REML criterion at convergence: 559.7
@@ -1491,15 +1422,165 @@ summary(nestling_m3)
 ##### Model comparison
 
 ``` r
-ICtab(nestling_m1, nestling_m2, nestling_m3, type = "AIC")
+ICtab(nestling_m1, nestling_m2, nestling_m3, type = "AICc")
 ```
 
-    ##             dAIC df
-    ## nestling_m1  0.0 10
-    ## nestling_m2  0.2 11
-    ## nestling_m3  1.5 12
+    ##             dAICc df
+    ## nestling_m1  0.0  10
+    ## nestling_m2  0.6  11
+    ## nestling_m3  2.3  12
 
-References
-==========
+## Survival
 
-Vitousek, Maren N., Conor C. Taff, Daniel R. Ardia, Jocelyn M. Stedman, Cedric Zimmer, Timothy C. Salzman, and David W. Winkler. 2018. “The Lingering Impact of Stress: Brief Acute Glucocorticoid Exposure Has Sustained, Dose-Dependent Effects on Reproduction.” *Proceedings of the Royal Society B: Biological Sciences* 285 (1882): 20180722–2. doi:[10.1098/rspb.2018.0722](https://doi.org/10.1098/rspb.2018.0722).
+### 2020 Return Rate
+
+#### Return rate models
+
+##### Null model
+
+``` r
+return_m1 <- glm(return2020 ~ success + ylaydate + Age + Treatment2,
+              family = binomial(link = "logit"),
+              data = df)
+summary(return_m1)
+```
+
+    ## 
+    ## Call:
+    ## glm(formula = return2020 ~ success + ylaydate + Age + Treatment2, 
+    ##     family = binomial(link = "logit"), data = df)
+    ## 
+    ## Deviance Residuals: 
+    ##     Min       1Q   Median       3Q      Max  
+    ## -1.7360  -0.7646  -0.3535   0.6929   2.5041  
+    ## 
+    ## Coefficients:
+    ##                            Estimate Std. Error z value Pr(>|z|)  
+    ## (Intercept)                -0.27000   10.86830  -0.025   0.9802  
+    ## successTRUE                 2.30432    0.94444   2.440   0.0147 *
+    ## ylaydate                   -0.00490    0.07785  -0.063   0.9498  
+    ## AgeSY                      -0.09686    0.70803  -0.137   0.8912  
+    ## Treatment2Predator_Control -2.02818    1.16917  -1.735   0.0828 .
+    ## Treatment2Water            -2.45812    1.06319  -2.312   0.0208 *
+    ## Treatment2Control_Control  -1.70600    1.14393  -1.491   0.1359  
+    ## Treatment2Control_Dull     -1.04942    1.20966  -0.868   0.3857  
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## (Dispersion parameter for binomial family taken to be 1)
+    ## 
+    ##     Null deviance: 71.529  on 59  degrees of freedom
+    ## Residual deviance: 57.260  on 52  degrees of freedom
+    ## AIC: 73.26
+    ## 
+    ## Number of Fisher Scoring iterations: 5
+
+##### BKA model
+
+``` r
+return_m2 <- glm(return2020 ~ success + ylaydate + Age + Treatment2 + Bacteria_Killing_Assay,
+                 family = binomial(link = "logit"),
+                 data = df)
+summary(return_m2)
+```
+
+    ## 
+    ## Call:
+    ## glm(formula = return2020 ~ success + ylaydate + Age + Treatment2 + 
+    ##     Bacteria_Killing_Assay, family = binomial(link = "logit"), 
+    ##     data = df)
+    ## 
+    ## Deviance Residuals: 
+    ##     Min       1Q   Median       3Q      Max  
+    ## -1.5959  -0.7622  -0.3458   0.6404   2.6438  
+    ## 
+    ## Coefficients:
+    ##                            Estimate Std. Error z value Pr(>|z|)  
+    ## (Intercept)                -1.32885   10.88434  -0.122   0.9028  
+    ## successTRUE                 2.34739    0.95850   2.449   0.0143 *
+    ## ylaydate                    0.00547    0.07820   0.070   0.9442  
+    ## AgeSY                      -0.04504    0.71261  -0.063   0.9496  
+    ## Treatment2Predator_Control -2.20528    1.21557  -1.814   0.0696 .
+    ## Treatment2Water            -2.58708    1.08950  -2.375   0.0176 *
+    ## Treatment2Control_Control  -1.70156    1.14104  -1.491   0.1359  
+    ## Treatment2Control_Dull     -1.17745    1.21207  -0.971   0.3313  
+    ## Bacteria_Killing_Assay     -0.79191    0.97686  -0.811   0.4176  
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## (Dispersion parameter for binomial family taken to be 1)
+    ## 
+    ##     Null deviance: 71.529  on 59  degrees of freedom
+    ## Residual deviance: 56.596  on 51  degrees of freedom
+    ## AIC: 74.596
+    ## 
+    ## Number of Fisher Scoring iterations: 5
+
+##### Interaction model
+
+``` r
+return_m3 <- glm(return2020 ~ success + Age + Treatment2 + Bacteria_Killing_Assay*ylaydate,
+                 family = binomial(link = "logit"),
+                 data = df)
+summary(return_m3)
+```
+
+    ## 
+    ## Call:
+    ## glm(formula = return2020 ~ success + Age + Treatment2 + Bacteria_Killing_Assay * 
+    ##     ylaydate, family = binomial(link = "logit"), data = df)
+    ## 
+    ## Deviance Residuals: 
+    ##     Min       1Q   Median       3Q      Max  
+    ## -1.5669  -0.7417  -0.3440   0.5552   2.6309  
+    ## 
+    ## Coefficients:
+    ##                                  Estimate Std. Error z value Pr(>|z|)  
+    ## (Intercept)                      12.36830   17.50447   0.707   0.4798  
+    ## successTRUE                       2.25325    0.96608   2.332   0.0197 *
+    ## AgeSY                            -0.11367    0.71732  -0.158   0.8741  
+    ## Treatment2Predator_Control       -2.55984    1.29036  -1.984   0.0473 *
+    ## Treatment2Water                  -2.64115    1.10780  -2.384   0.0171 *
+    ## Treatment2Control_Control        -1.69134    1.14468  -1.478   0.1395  
+    ## Treatment2Control_Dull           -1.36529    1.27866  -1.068   0.2856  
+    ## Bacteria_Killing_Assay          -36.03552   32.29362  -1.116   0.2645  
+    ## ylaydate                         -0.09158    0.12522  -0.731   0.4645  
+    ## Bacteria_Killing_Assay:ylaydate   0.25277    0.23150   1.092   0.2749  
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## (Dispersion parameter for binomial family taken to be 1)
+    ## 
+    ##     Null deviance: 71.529  on 59  degrees of freedom
+    ## Residual deviance: 55.347  on 50  degrees of freedom
+    ## AIC: 75.347
+    ## 
+    ## Number of Fisher Scoring iterations: 5
+
+##### Model comparison
+
+``` r
+ICtab(return_m1, return_m2, return_m3, type = "AICc")
+```
+
+    ##           dAICc df
+    ## return_m1  0.0  8 
+    ## return_m2  2.1  9 
+    ## return_m3  3.8  10
+
+# References
+
+<div id="refs" class="references csl-bib-body hanging-indent">
+
+<div id="ref-vitousekLingeringImpactStress2018" class="csl-entry">
+
+Vitousek, Maren N., Conor C. Taff, Daniel R. Ardia, Jocelyn M. Stedman,
+Cedric Zimmer, Timothy C. Salzman, and David W. Winkler. 2018. “The
+Lingering Impact of Stress: Brief Acute Glucocorticoid Exposure Has
+Sustained, Dose-Dependent Effects on Reproduction.” *Proceedings of the
+Royal Society B: Biological Sciences* 285 (1882): 20180722–22.
+<https://doi.org/10.1098/rspb.2018.0722>.
+
+</div>
+
+</div>
