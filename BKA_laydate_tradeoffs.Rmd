@@ -16,10 +16,8 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, error = FALSE,
 library(lme4)
 library(bbmle)
 library(gridExtra)
-library(dagitty)
 library(lubridate)
 library(viridis)
-library(here)
 library(sjPlot)
 library(gtsummary)
 library(MASS)
@@ -27,6 +25,7 @@ library(tidyverse)
 library(knitr)
 library(broom)
 library(lmerTest)
+library(MuMIn)
 library(here)
 
 # over dispersion
@@ -77,6 +76,26 @@ pc <- read_csv(here("data", "pc.csv"),
                  Plasma_Analyzed = col_factor(),
                  Nest_Fate = col_factor()
                  ))
+
+# Lay Date groups
+lay_dates <- filter(df)$ylaydate
+lay_dates <- lay_dates[!is.na(lay_dates)]
+
+mean_lay <-  mean(lay_dates)
+early_lay <- mean(head(sort(lay_dates), n = round(length(lay_dates)*0.1)) ) # earliest 10%
+late_lay <-  mean(tail(sort(lay_dates), n = round(length(lay_dates)*0.1)) )
+
+lay_colors <- c("#48186AFF", # early 10%
+                "#21908CFF", # mean
+                "#D5E21AFF"  # late 10%
+                )
+
+lay_lines <- c("solid",      # early 10%
+               "longdash",   # mean
+               "dotdash"      # late 10%
+               )
+
+lay_groups <- c(early_lay, mean_lay, late_lay)
 ```
 
 # Method assessment
@@ -258,6 +277,33 @@ clutch_m3p <- glm(Clutch_Size ~ Bacteria_Killing_Assay*ylaydate + Age,
 ICtab(clutch_m1p, clutch_m2p, clutch_m3p, dispersion = dfun(clutch_m1p), type = "qAICc")
 ```
 
+##### Model averaging
+```{r avg. model}
+# model average
+
+# 
+x.quasipoisson <- function(...) {
+
+res <- quasipoisson(...)
+
+res$aic <- poisson(...)$aic
+
+res
+
+}
+
+clutch_m1<-update(clutch_m1,family = "x.quasipoisson")
+clutch_m2<-update(clutch_m2,family = "x.quasipoisson")
+clutch_m3<-update(clutch_m3,family = "x.quasipoisson")
+
+chat<-sum(residuals(clutch_m1,"pearson")^2)/clutch_m1$df.residual ### calculate overdispersion
+quasi.MS<-model.sel(clutch_m1, clutch_m2, clutch_m3, rank = QAICc, rank.args = alist(chat = chat))
+summary(model.avg(quasi.MS, revised.var = TRUE))
+```
+
+
+
+
 ### Nestling Feeding Rate
 
 #### Feeding Rate variation
@@ -341,6 +387,137 @@ summary(provisioning_m3)
 
 ```{r aic provisioning}
 ICtab(provisioning_m1, provisioning_m2, provisioning_m3, type = "AICc")
+```
+
+###### Model averaging
+
+```{r model avg feeding rate}
+feeding_rate <- model.avg(provisioning_m1, provisioning_m2, provisioning_m3, revised.var = TRUE)
+summary(feeding_rate)
+
+
+```
+
+```{r feeding plot}
+# Bootstrap model variable beta estimates
+# set number of iterations
+n = 10000
+
+z <- mvrnorm(n=n, mu = fixef(provisioning_m2), Sigma = vcov(provisioning_m2))
+z <- as_tibble(z)
+
+#Set model parameter values
+scBrood_Size_Hatching = (mean(pc$Brood_Size_Hatching) - attr(scaled_pc$scBrood_Size_Hatching, "scaled:center")) / attr(scaled_pc$scBrood_Size_Hatching, "scaled:scale")
+Offset = seq(1,20,length.out = 100)
+scOffset = (seq(1,20,length.out = 100) - attr(scaled_pc$scOffset, "scaled:center")) / attr(scaled_pc$scOffset, "scaled:scale")
+scHour = (10 - attr(scaled_pc$scHour, "scaled:center")) / attr(scaled_pc$scHour, "scaled:scale")
+jlaydate = mean_lay
+scjlaydate = (mean_lay - attr(scaled_pc$scjlaydate, "scaled:center")) / attr(scaled_pc$scjlaydate, "scaled:scale")
+sctemp = (25.0 - attr(scaled_pc$sctemp, "scaled:center")) / attr(scaled_pc$sctemp, "scaled:scale")
+TreatmentControl_Control = 1 # 1 == Control_Control
+TreatmentPredator_Control = 0 # 1 == Predator_Control
+TreatmentControl_Dull = 0 # 1 == Control_Dull // 0,0,0 == Predator_Dull
+
+#initiate plotting data table
+plot_data_provisioning_m9 <- tibble(
+  NestlingAge = numeric(),
+  bkc = numeric(),
+  LayDate = numeric(),
+  fit = numeric(),
+  se = numeric(),
+  lwr = numeric(),
+  upr = numeric()
+)
+
+#set ranges to plot
+bk_range <- c(0,1)
+
+for (j in 1:length(bk_range)) {
+  scbkc = (bk_range[j] - attr(scaled_pc$scbkc, "scaled:center")) / attr(scaled_pc$scbkc, "scaled:scale");
+  fit <- sapply(scOffset, function(x) exp(mean(
+    z$`(Intercept)` +
+      z$scBrood_Size_Hatching*scBrood_Size_Hatching +
+      z$`I(scBrood_Size_Hatching^2)`*(scBrood_Size_Hatching^2) +
+      z$scOffset*x +
+      z$`I(scOffset^2)`*(x^2) +
+      z$scHour*scHour +
+      z$`I(scHour^2)`*(scHour^2) +
+      z$scjlaydate*scjlaydate +
+      z$sctemp*sctemp +
+      z$TreatmentControl_Control*TreatmentControl_Control +
+      z$TreatmentPredator_Control*TreatmentPredator_Control +
+      z$TreatmentControl_Dull*TreatmentControl_Dull +
+      z$scbkc*scbkc +
+      z$`scBrood_Size_Hatching:scOffset`*scBrood_Size_Hatching*x) ) )
+  se <- sapply(scOffset, function(x) exp(sd(
+     z$`(Intercept)` +
+      z$scBrood_Size_Hatching*scBrood_Size_Hatching +
+      z$`I(scBrood_Size_Hatching^2)`*(scBrood_Size_Hatching^2) +
+      z$scOffset*x +
+      z$`I(scOffset^2)`*(x^2) +
+      z$scHour*scHour +
+      z$`I(scHour^2)`*(scHour^2) +
+      z$scjlaydate*scjlaydate +
+      z$sctemp*sctemp +
+      z$TreatmentControl_Control*TreatmentControl_Control +
+      z$TreatmentPredator_Control*TreatmentPredator_Control +
+      z$TreatmentControl_Dull*TreatmentControl_Dull +
+      z$scbkc*scbkc +
+      z$`scBrood_Size_Hatching:scOffset`*scBrood_Size_Hatching*x)/sqrt(n) ) )
+  plot_data_provisioning_m9<- rbind(plot_data_provisioning_m9, 
+                                        tibble(NestlingAge = Offset, 
+                                                bkc = scbkc*attr(scaled_pc$scbkc, "scaled:scale") + attr(scaled_pc$scbkc, "scaled:center"),
+                                                LayDate = jlaydate,
+                                                fit = fit, se = se, 
+                                                lwr = fit - 1.96*se, upr = fit + 1.96*se))
+}
+
+bk_colors <- c("#3B528BFF", "#5DC863FF")
+
+hourly_provisioning <- ggplot() +
+  scale_fill_manual(name = "Prop. of Bacteria Killed",
+                    values = bk_colors,
+                    labels = c("0%", "100%"),
+                    guide = guide_legend(
+                      direction = "horizontal",
+                      title.position = "top") ) + 
+  scale_color_manual(name = "Prop. of Bacteria Killed",
+                     values = bk_colors,
+                     labels = c("0%", "100%"),
+                     guide = guide_legend(
+                       direction = "horizontal",
+                       title.position = "top") ) +
+  scale_linetype_manual(name = "Prop. of Bacteria Killed",
+                        values=c("twodash", "solid"),
+                        labels = c("0%", "100%"),
+                        guide = guide_legend(
+                          direction = "horizontal",
+                          title.position = "top") ) +
+  geom_line(data = plot_data_provisioning_m9,
+            aes(x = NestlingAge,
+                y = fit, 
+                group = bkc, 
+                linetype = as.factor(bkc), 
+                color = as.factor(bkc)), 
+            size = 1) +
+  geom_ribbon(data = plot_data_provisioning_m9, 
+              aes(x = NestlingAge,
+                  ymin = lwr, ymax = upr,
+                  group = as.factor(bkc), 
+                  fill = as.factor(bkc) ), alpha = 0.2) +
+  theme(panel.background = element_rect(fill=NA),
+        axis.line = element_line(size=1),
+        legend.position = c(0.5,0.2),
+        legend.background = element_rect(fill=NA),
+        legend.text.align = 0.5,
+        legend.title.align = 0.5,
+        legend.key.width = unit(1,"cm"),
+        legend.key = element_rect(fill = NA)) +
+  labs(title = "",
+       x = "Nestling age (days)",
+       y = "Feeding rate (visits per hour)") +
+  scale_x_continuous(limits = c(1, 20), expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 20), expand = c(0,0)); hourly_provisioning
 ```
 
 #### Including Mate provisioning
@@ -588,6 +765,12 @@ nestling_m3 <- lmer(Nestling_Mass ~ Bacteria_Killing_Assay*ylaydate +
                                  Nestling_Fate == "Fledged",
                                  Bacteria_Killing_Assay != "NA") )
 summary(nestling_m3)
+```
+
+##### model averaging
+
+```{r model avg}
+summary(model.avg(nestling_m1, nestling_m2, nestling_m3))
 ```
 
 ##### Model comparison
