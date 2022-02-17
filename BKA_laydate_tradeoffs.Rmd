@@ -394,8 +394,6 @@ ICtab(provisioning_m1, provisioning_m2, provisioning_m3, type = "AICc")
 ```{r model avg feeding rate}
 feeding_rate <- model.avg(provisioning_m1, provisioning_m2, provisioning_m3, revised.var = TRUE)
 summary(feeding_rate)
-
-
 ```
 
 ```{r feeding plot}
