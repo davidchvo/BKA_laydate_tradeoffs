@@ -368,6 +368,81 @@ ICtab(clutch_m1p, clutch_m2p, clutch_m3p, dispersion = dfun(clutch_m1p), type = 
     ## clutch_m1p 1.3    3 
     ## clutch_m2p 2.4    4
 
+##### Model averaging
+
+``` r
+# model average
+
+# 
+x.quasipoisson <- function(...) {
+
+res <- quasipoisson(...)
+
+res$aic <- poisson(...)$aic
+
+res
+
+}
+
+clutch_m1<-update(clutch_m1,family = "x.quasipoisson")
+clutch_m2<-update(clutch_m2,family = "x.quasipoisson")
+clutch_m3<-update(clutch_m3,family = "x.quasipoisson")
+
+chat<-sum(residuals(clutch_m1,"pearson")^2)/clutch_m1$df.residual ### calculate overdispersion
+quasi.MS<-model.sel(clutch_m1, clutch_m2, clutch_m3, rank = QAICc, rank.args = alist(chat = chat))
+summary(model.avg(quasi.MS, revised.var = TRUE))
+```
+
+    ## 
+    ## Call:
+    ## model.avg(object = quasi.MS, revised.var = TRUE)
+    ## 
+    ## Component model call: 
+    ## glm(formula = <3 unique values>, family = x.quasipoisson, data = df)
+    ## 
+    ## Component models: 
+    ##      df  logLik  QAICc delta weight
+    ## 12    3 -109.71 225.85  0.00   0.68
+    ## 123   4 -109.63 227.99  2.15   0.23
+    ## 1234  5 -109.35 229.80  3.96   0.09
+    ## 
+    ## Term codes: 
+    ##                             Age                        ylaydate 
+    ##                               1                               2 
+    ##          Bacteria_Killing_Assay Bacteria_Killing_Assay:ylaydate 
+    ##                               3                               4 
+    ## 
+    ## Model-averaged coefficients:  
+    ## (full average) 
+    ##                                  Estimate Std. Error Adjusted SE z value
+    ## (Intercept)                      3.512217   0.814209    0.825597   4.254
+    ## AgeSY                           -0.089003   0.039282    0.040133   2.218
+    ## ylaydate                        -0.012718   0.005909    0.005991   2.123
+    ## Bacteria_Killing_Assay           0.327182   1.186345    1.191316   0.275
+    ## Bacteria_Killing_Assay:ylaydate -0.002497   0.008593    0.008628   0.289
+    ##                                 Pr(>|z|)    
+    ## (Intercept)                      2.1e-05 ***
+    ## AgeSY                             0.0266 *  
+    ## ylaydate                          0.0338 *  
+    ## Bacteria_Killing_Assay            0.7836    
+    ## Bacteria_Killing_Assay:ylaydate   0.7723    
+    ##  
+    ## (conditional average) 
+    ##                                  Estimate Std. Error Adjusted SE z value
+    ## (Intercept)                      3.512217   0.814209    0.825597   4.254
+    ## AgeSY                           -0.089003   0.039282    0.040133   2.218
+    ## ylaydate                        -0.012718   0.005909    0.005991   2.123
+    ## Bacteria_Killing_Assay           1.008789   1.910979    1.920490   0.525
+    ## Bacteria_Killing_Assay:ylaydate -0.026740   0.011934    0.012202   2.191
+    ##                                 Pr(>|z|)    
+    ## (Intercept)                      2.1e-05 ***
+    ## AgeSY                             0.0266 *  
+    ## ylaydate                          0.0338 *  
+    ## Bacteria_Killing_Assay            0.5994    
+    ## Bacteria_Killing_Assay:ylaydate   0.0284 *  
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
 ### Nestling Feeding Rate
 
 #### Feeding Rate variation
@@ -592,6 +667,237 @@ ICtab(provisioning_m1, provisioning_m2, provisioning_m3, type = "AICc")
     ## provisioning_m2  0.0  15
     ## provisioning_m3  1.5  16
     ## provisioning_m1  3.5  14
+
+###### Model averaging
+
+``` r
+feeding_rate <- model.avg(provisioning_m1, provisioning_m2, provisioning_m3, revised.var = TRUE)
+summary(feeding_rate)
+```
+
+    ## 
+    ## Call:
+    ## model.avg(object = provisioning_m1, provisioning_m2, provisioning_m3, 
+    ##     revised.var = TRUE)
+    ## 
+    ## Component model call: 
+    ## glmer(formula = FemFeed ~ <3 unique rhs>, data = scaled_pc, family = 
+    ##      poisson(link = "log"))
+    ## 
+    ## Component models: 
+    ##                            df    logLik     AICc delta weight
+    ## 1/2/3/4/5/6/7/8/9/10/12    15 -24136.86 48303.79  0.00   0.61
+    ## 1/2/3/4/5/6/7/8/9/10/11/12 16 -24136.63 48305.33  1.54   0.28
+    ## 1/2/3/5/6/7/8/9/10/12      14 -24139.62 48307.30  3.51   0.11
+    ## 
+    ## Term codes: 
+    ##     I(scBrood_Size_Hatching^2)                    I(scHour^2) 
+    ##                              1                              2 
+    ##                  I(scOffset^2)                          scbkc 
+    ##                              3                              4 
+    ##          scBrood_Size_Hatching                         scHour 
+    ##                              5                              6 
+    ##                     scjlaydate                       scOffset 
+    ##                              7                              8 
+    ##                         sctemp                      Treatment 
+    ##                              9                             10 
+    ##               scbkc:scjlaydate scBrood_Size_Hatching:scOffset 
+    ##                             11                             12 
+    ## 
+    ## Model-averaged coefficients:  
+    ## (full average) 
+    ##                                 Estimate Std. Error Adjusted SE z value
+    ## (Intercept)                     2.564149   0.058164    0.058173  44.078
+    ## scBrood_Size_Hatching           0.065845   0.029381    0.029385   2.241
+    ## I(scBrood_Size_Hatching^2)     -0.030741   0.019136    0.019139   1.606
+    ## scOffset                       -0.031104   0.005226    0.005226   5.951
+    ## I(scOffset^2)                  -0.245158   0.005851    0.005852  41.891
+    ## scHour                          0.052065   0.004048    0.004049  12.860
+    ## I(scHour^2)                     0.026679   0.004907    0.004908   5.436
+    ## scjlaydate                     -0.034627   0.026297    0.026301   1.317
+    ## sctemp                          0.131149   0.005103    0.005104  25.697
+    ## TreatmentControl_Control       -0.033211   0.064995    0.065007   0.511
+    ## TreatmentPredator_Control       0.011927   0.063943    0.063953   0.187
+    ## TreatmentControl_Dull           0.100187   0.078322    0.078335   1.279
+    ## scbkc                          -0.054591   0.029852    0.029855   1.829
+    ## scBrood_Size_Hatching:scOffset -0.037249   0.004548    0.004549   8.188
+    ## scbkc:scjlaydate                0.005595   0.017717    0.017719   0.316
+    ##                                Pr(>|z|)    
+    ## (Intercept)                      <2e-16 ***
+    ## scBrood_Size_Hatching            0.0250 *  
+    ## I(scBrood_Size_Hatching^2)       0.1082    
+    ## scOffset                         <2e-16 ***
+    ## I(scOffset^2)                    <2e-16 ***
+    ## scHour                           <2e-16 ***
+    ## I(scHour^2)                       1e-07 ***
+    ## scjlaydate                       0.1880    
+    ## sctemp                           <2e-16 ***
+    ## TreatmentControl_Control         0.6094    
+    ## TreatmentPredator_Control        0.8521    
+    ## TreatmentControl_Dull            0.2009    
+    ## scbkc                            0.0675 .  
+    ## scBrood_Size_Hatching:scOffset   <2e-16 ***
+    ## scbkc:scjlaydate                 0.7522    
+    ##  
+    ## (conditional average) 
+    ##                                 Estimate Std. Error Adjusted SE z value
+    ## (Intercept)                     2.564149   0.058164    0.058173  44.078
+    ## scBrood_Size_Hatching           0.065845   0.029381    0.029385   2.241
+    ## I(scBrood_Size_Hatching^2)     -0.030741   0.019136    0.019139   1.606
+    ## scOffset                       -0.031104   0.005226    0.005226   5.951
+    ## I(scOffset^2)                  -0.245158   0.005851    0.005852  41.891
+    ## scHour                          0.052065   0.004048    0.004049  12.860
+    ## I(scHour^2)                     0.026679   0.004907    0.004908   5.436
+    ## scjlaydate                     -0.034627   0.026297    0.026301   1.317
+    ## sctemp                          0.131149   0.005103    0.005104  25.697
+    ## TreatmentControl_Control       -0.033211   0.064995    0.065007   0.511
+    ## TreatmentPredator_Control       0.011927   0.063943    0.063953   0.187
+    ## TreatmentControl_Dull           0.100187   0.078322    0.078335   1.279
+    ## scbkc                          -0.061048   0.024542    0.024547   2.487
+    ## scBrood_Size_Hatching:scOffset -0.037249   0.004548    0.004549   8.188
+    ## scbkc:scjlaydate                0.019781   0.028796    0.028801   0.687
+    ##                                Pr(>|z|)    
+    ## (Intercept)                      <2e-16 ***
+    ## scBrood_Size_Hatching            0.0250 *  
+    ## I(scBrood_Size_Hatching^2)       0.1082    
+    ## scOffset                         <2e-16 ***
+    ## I(scOffset^2)                    <2e-16 ***
+    ## scHour                           <2e-16 ***
+    ## I(scHour^2)                       1e-07 ***
+    ## scjlaydate                       0.1880    
+    ## sctemp                           <2e-16 ***
+    ## TreatmentControl_Control         0.6094    
+    ## TreatmentPredator_Control        0.8521    
+    ## TreatmentControl_Dull            0.2009    
+    ## scbkc                            0.0129 *  
+    ## scBrood_Size_Hatching:scOffset   <2e-16 ***
+    ## scbkc:scjlaydate                 0.4922    
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+``` r
+# Bootstrap model variable beta estimates
+# set number of iterations
+n = 10000
+
+z <- mvrnorm(n=n, mu = fixef(provisioning_m2), Sigma = vcov(provisioning_m2))
+z <- as_tibble(z)
+
+#Set model parameter values
+scBrood_Size_Hatching = (mean(pc$Brood_Size_Hatching) - attr(scaled_pc$scBrood_Size_Hatching, "scaled:center")) / attr(scaled_pc$scBrood_Size_Hatching, "scaled:scale")
+Offset = seq(1,20,length.out = 100)
+scOffset = (seq(1,20,length.out = 100) - attr(scaled_pc$scOffset, "scaled:center")) / attr(scaled_pc$scOffset, "scaled:scale")
+scHour = (10 - attr(scaled_pc$scHour, "scaled:center")) / attr(scaled_pc$scHour, "scaled:scale")
+jlaydate = mean_lay
+scjlaydate = (mean_lay - attr(scaled_pc$scjlaydate, "scaled:center")) / attr(scaled_pc$scjlaydate, "scaled:scale")
+sctemp = (25.0 - attr(scaled_pc$sctemp, "scaled:center")) / attr(scaled_pc$sctemp, "scaled:scale")
+TreatmentControl_Control = 1 # 1 == Control_Control
+TreatmentPredator_Control = 0 # 1 == Predator_Control
+TreatmentControl_Dull = 0 # 1 == Control_Dull // 0,0,0 == Predator_Dull
+
+#initiate plotting data table
+plot_data_provisioning_m9 <- tibble(
+  NestlingAge = numeric(),
+  bkc = numeric(),
+  LayDate = numeric(),
+  fit = numeric(),
+  se = numeric(),
+  lwr = numeric(),
+  upr = numeric()
+)
+
+#set ranges to plot
+bk_range <- c(0,1)
+
+for (j in 1:length(bk_range)) {
+  scbkc = (bk_range[j] - attr(scaled_pc$scbkc, "scaled:center")) / attr(scaled_pc$scbkc, "scaled:scale");
+  fit <- sapply(scOffset, function(x) exp(mean(
+    z$`(Intercept)` +
+      z$scBrood_Size_Hatching*scBrood_Size_Hatching +
+      z$`I(scBrood_Size_Hatching^2)`*(scBrood_Size_Hatching^2) +
+      z$scOffset*x +
+      z$`I(scOffset^2)`*(x^2) +
+      z$scHour*scHour +
+      z$`I(scHour^2)`*(scHour^2) +
+      z$scjlaydate*scjlaydate +
+      z$sctemp*sctemp +
+      z$TreatmentControl_Control*TreatmentControl_Control +
+      z$TreatmentPredator_Control*TreatmentPredator_Control +
+      z$TreatmentControl_Dull*TreatmentControl_Dull +
+      z$scbkc*scbkc +
+      z$`scBrood_Size_Hatching:scOffset`*scBrood_Size_Hatching*x) ) )
+  se <- sapply(scOffset, function(x) exp(sd(
+     z$`(Intercept)` +
+      z$scBrood_Size_Hatching*scBrood_Size_Hatching +
+      z$`I(scBrood_Size_Hatching^2)`*(scBrood_Size_Hatching^2) +
+      z$scOffset*x +
+      z$`I(scOffset^2)`*(x^2) +
+      z$scHour*scHour +
+      z$`I(scHour^2)`*(scHour^2) +
+      z$scjlaydate*scjlaydate +
+      z$sctemp*sctemp +
+      z$TreatmentControl_Control*TreatmentControl_Control +
+      z$TreatmentPredator_Control*TreatmentPredator_Control +
+      z$TreatmentControl_Dull*TreatmentControl_Dull +
+      z$scbkc*scbkc +
+      z$`scBrood_Size_Hatching:scOffset`*scBrood_Size_Hatching*x)/sqrt(n) ) )
+  plot_data_provisioning_m9<- rbind(plot_data_provisioning_m9, 
+                                        tibble(NestlingAge = Offset, 
+                                                bkc = scbkc*attr(scaled_pc$scbkc, "scaled:scale") + attr(scaled_pc$scbkc, "scaled:center"),
+                                                LayDate = jlaydate,
+                                                fit = fit, se = se, 
+                                                lwr = fit - 1.96*se, upr = fit + 1.96*se))
+}
+
+bk_colors <- c("#3B528BFF", "#5DC863FF")
+
+hourly_provisioning <- ggplot() +
+  scale_fill_manual(name = "Prop. of Bacteria Killed",
+                    values = bk_colors,
+                    labels = c("0%", "100%"),
+                    guide = guide_legend(
+                      direction = "horizontal",
+                      title.position = "top") ) + 
+  scale_color_manual(name = "Prop. of Bacteria Killed",
+                     values = bk_colors,
+                     labels = c("0%", "100%"),
+                     guide = guide_legend(
+                       direction = "horizontal",
+                       title.position = "top") ) +
+  scale_linetype_manual(name = "Prop. of Bacteria Killed",
+                        values=c("twodash", "solid"),
+                        labels = c("0%", "100%"),
+                        guide = guide_legend(
+                          direction = "horizontal",
+                          title.position = "top") ) +
+  geom_line(data = plot_data_provisioning_m9,
+            aes(x = NestlingAge,
+                y = fit, 
+                group = bkc, 
+                linetype = as.factor(bkc), 
+                color = as.factor(bkc)), 
+            size = 1) +
+  geom_ribbon(data = plot_data_provisioning_m9, 
+              aes(x = NestlingAge,
+                  ymin = lwr, ymax = upr,
+                  group = as.factor(bkc), 
+                  fill = as.factor(bkc) ), alpha = 0.2) +
+  theme(panel.background = element_rect(fill=NA),
+        axis.line = element_line(size=1),
+        legend.position = c(0.5,0.2),
+        legend.background = element_rect(fill=NA),
+        legend.text.align = 0.5,
+        legend.title.align = 0.5,
+        legend.key.width = unit(1,"cm"),
+        legend.key = element_rect(fill = NA)) +
+  labs(title = "",
+       x = "Nestling age (days)",
+       y = "Feeding rate (visits per hour)") +
+  scale_x_continuous(limits = c(1, 20), expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 20), expand = c(0,0)); hourly_provisioning
+```
+
+<img src="BKA_laydate_tradeoffs_files/figure-gfm/feeding plot-1.png" style="display: block; margin: auto;" />
 
 #### Including Mate provisioning
 
@@ -1418,6 +1724,85 @@ summary(nestling_m3)
     ## Trtmnt2Pr_D  0.111 -0.067 -0.189  0.438  0.063  0.464  0.497              
     ## Tretmnt2Wtr  0.136  0.087 -0.287  0.022  0.270  0.637  0.522  0.528       
     ## Bctr_Kll_A:  0.745 -1.000 -0.593  0.324 -0.056 -0.203 -0.143  0.069 -0.078
+
+##### model averaging
+
+``` r
+summary(model.avg(nestling_m1, nestling_m2, nestling_m3))
+```
+
+    ## 
+    ## Call:
+    ## model.avg(object = nestling_m1, nestling_m2, nestling_m3)
+    ## 
+    ## Component model call: 
+    ## lmer(formula = <3 unique values>, data = filter(nd, Nestling_Fate == 
+    ##      "Fledged", Bacteria_Killing_Assay != "NA"))
+    ## 
+    ## Component models: 
+    ##        df  logLik   AICc delta weight
+    ## 2345   10 -281.09 583.99  0.00   0.49
+    ## 12345  11 -280.19 584.59  0.59   0.36
+    ## 123456 12 -279.85 586.33  2.34   0.15
+    ## 
+    ## Term codes: 
+    ##          Bacteria_Killing_Assay             Brood_Size_Hatching 
+    ##                               1                               2 
+    ##                            temp                      Treatment2 
+    ##                               3                               4 
+    ##                        ylaydate Bacteria_Killing_Assay:ylaydate 
+    ##                               5                               6 
+    ## 
+    ## Model-averaged coefficients:  
+    ## (full average) 
+    ##                                 Estimate Std. Error Adjusted SE z value
+    ## (Intercept)                     15.19732   13.07478    13.17891   1.153
+    ## Brood_Size_Hatching             -1.36520    0.35946     0.36300   3.761
+    ## ylaydate                        -0.07400    0.12812     0.12926   0.573
+    ## Treatment2Control_Dull          -0.88461    1.19358     1.20550   0.734
+    ## Treatment2Predator_Control      -2.53082    1.39129     1.40525   1.801
+    ## Treatment2Predator_Dull         -1.60418    1.38357     1.39749   1.148
+    ## Treatment2Water                 -0.67412    0.98306     0.99295   0.679
+    ## temp                             1.21276    0.58138     0.58724   2.065
+    ## Bacteria_Killing_Assay           6.35759   19.54663    19.62378   0.324
+    ## Bacteria_Killing_Assay:ylaydate -0.04658    0.14056     0.14111   0.330
+    ##                                 Pr(>|z|)    
+    ## (Intercept)                     0.248847    
+    ## Brood_Size_Hatching             0.000169 ***
+    ## ylaydate                        0.566980    
+    ## Treatment2Control_Dull          0.463062    
+    ## Treatment2Predator_Control      0.071706 .  
+    ## Treatment2Predator_Dull         0.251013    
+    ## Treatment2Water                 0.497197    
+    ## temp                            0.038904 *  
+    ## Bacteria_Killing_Assay          0.745958    
+    ## Bacteria_Killing_Assay:ylaydate 0.741345    
+    ##  
+    ## (conditional average) 
+    ##                                 Estimate Std. Error Adjusted SE z value
+    ## (Intercept)                      15.1973    13.0748     13.1789   1.153
+    ## Brood_Size_Hatching              -1.3652     0.3595      0.3630   3.761
+    ## ylaydate                         -0.0740     0.1281      0.1293   0.573
+    ## Treatment2Control_Dull           -0.8846     1.1936      1.2055   0.734
+    ## Treatment2Predator_Control       -2.5308     1.3913      1.4053   1.801
+    ## Treatment2Predator_Dull          -1.6042     1.3836      1.3975   1.148
+    ## Treatment2Water                  -0.6741     0.9831      0.9929   0.679
+    ## temp                              1.2128     0.5814      0.5872   2.065
+    ## Bacteria_Killing_Assay           12.3879    25.8799     25.9934   0.477
+    ## Bacteria_Killing_Assay:ylaydate  -0.3080     0.2239      0.2262   1.362
+    ##                                 Pr(>|z|)    
+    ## (Intercept)                     0.248847    
+    ## Brood_Size_Hatching             0.000169 ***
+    ## ylaydate                        0.566980    
+    ## Treatment2Control_Dull          0.463062    
+    ## Treatment2Predator_Control      0.071706 .  
+    ## Treatment2Predator_Dull         0.251013    
+    ## Treatment2Water                 0.497197    
+    ## temp                            0.038904 *  
+    ## Bacteria_Killing_Assay          0.633662    
+    ## Bacteria_Killing_Assay:ylaydate 0.173350    
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 ##### Model comparison
 
