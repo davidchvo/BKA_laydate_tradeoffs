@@ -399,15 +399,11 @@ provisioning_m3 <- glmer(data = scaled_pc, FemFeed ~ scBrood_Size_Hatching +
 summary(provisioning_m3)
 ```
 
-###### Model comparison
+###### Model comparison and averaging
 
 ```{r aic provisioning}
-ICtab(provisioning_m1, provisioning_m2, provisioning_m3, type = "AICc")
-```
+# ICtab(provisioning_m1, provisioning_m2, provisioning_m3, type = "AICc")
 
-###### Model averaging
-
-```{r model avg feeding rate}
 feeding_rate <- model.avg(provisioning_m1, provisioning_m2, provisioning_m3, revised.var = TRUE)
 summary(feeding_rate)
 ```
@@ -534,9 +530,9 @@ hourly_provisioning <- ggplot() +
   scale_y_continuous(limits = c(0, 20), expand = c(0,0)); hourly_provisioning
 ```
 
-#### Including Mate provisioning
+##### Including Mate provisioning
 
-##### Null model
+###### Null model
 
 ```{r mate provisioning null}
 provisioning_m4 <- glmer(data = scaled_pc, FemFeed ~ scBrood_Size_Hatching + 
@@ -549,7 +545,7 @@ provisioning_m4 <- glmer(data = scaled_pc, FemFeed ~ scBrood_Size_Hatching +
 summary(provisioning_m4)
 ```
 
-##### BKA model
+###### BKA model
 
 ```{r mate provisioning bka}
 provisioning_m5 <- glmer(data = scaled_pc, FemFeed ~ scBrood_Size_Hatching + 
@@ -561,7 +557,7 @@ provisioning_m5 <- glmer(data = scaled_pc, FemFeed ~ scBrood_Size_Hatching +
 summary(provisioning_m5)
 ```
 
-##### Interaction model
+###### Interaction model
 
 ```{r mate provisioning interaction}
 provisioning_m6 <- glmer(data = scaled_pc, FemFeed ~ scBrood_Size_Hatching + 
@@ -573,15 +569,11 @@ provisioning_m6 <- glmer(data = scaled_pc, FemFeed ~ scBrood_Size_Hatching +
 summary(provisioning_m6)
 ```
 
-###### Model Comparison
+###### Model Comparison and averaging
 
 ```{r mate provisioning AIC}
-ICtab(provisioning_m4, provisioning_m5, provisioning_m6, type = "AIC")
-```
+# ICtab(provisioning_m4, provisioning_m5, provisioning_m6, type = "AIC")
 
-###### Model Averaging
-
-```{r mate provisioning AIC}
 feeding_rate_wMales <- model.avg(provisioning_m4, provisioning_m5, provisioning_m6, revised.var = TRUE)
 summary(feeding_rate_wMales)
 ```
@@ -633,12 +625,8 @@ summary(prop_mass_loss_m3)
 ##### Model comparison
 
 ```{r aic mass loss}
-ICtab(prop_mass_loss_m1, prop_mass_loss_m2, prop_mass_loss_m3, type = "AICc")
-```
+# ICtab(prop_mass_loss_m1, prop_mass_loss_m2, prop_mass_loss_m3, type = "AICc")
 
-##### Model averaging
-
-```{r aic mass loss}
 mass_loss <- model.avg(prop_mass_loss_m1, prop_mass_loss_m2, prop_mass_loss_m3, revised.var = TRUE)
 summary(mass_loss)
 ```
@@ -674,20 +662,17 @@ success_m3 <- glm(success ~ Bacteria_Killing_Assay*ylaydate +
 summary(success_m3)
 ```
 
-##### Model comparison
+##### Model comparison and averaging
 ```{r success AIC}
-ICtab(success_m1, success_m2, success_m3, type = "AICc")
-```
+# ICtab(success_m1, success_m2, success_m3, type = "AICc")
 
-##### Model averaging
-```{r success avg}
 success <- model.avg(success_m1, success_m2, success_m3, revised.var = TRUE)
 summary(success)
 ```
 
-### Number of nestlings fledged
+#### Number of nestlings fledged
 
-#### Number fledged distribution
+##### Number fledged distribution
 
 ```{r fledged histogram}
 ggplot(filter(df, .fledged > 0 )) +
@@ -700,9 +685,9 @@ ggplot(filter(df, .fledged > 0 )) +
        y = "No. of individuals")
 ```
 
-#### Number fledged models
+##### Number fledged models
 
-##### Null model
+###### Null model
 
 ```{r nfledged null}
 fledged_m1 <- glm(.fledged ~ Brood_Size_Hatching + ylaydate +  Treatment2, 
@@ -711,7 +696,7 @@ fledged_m1 <- glm(.fledged ~ Brood_Size_Hatching + ylaydate +  Treatment2,
 summary(fledged_m1)
 ```
 
-##### BKA model
+###### BKA model
 
 ```{r nfledged BKA}
 fledged_m2 <- glm(.fledged ~ Bacteria_Killing_Assay + Brood_Size_Hatching + 
@@ -720,7 +705,7 @@ fledged_m2 <- glm(.fledged ~ Bacteria_Killing_Assay + Brood_Size_Hatching +
 summary(fledged_m2)
 ```
 
-##### Interaction model
+###### Interaction model
 
 ```{r nfledged interaction}
 fledged_m3 <- glm(.fledged ~ Bacteria_Killing_Assay*ylaydate + 
@@ -730,7 +715,7 @@ fledged_m3 <- glm(.fledged ~ Bacteria_Killing_Assay*ylaydate +
 summary(fledged_m3)
 ```
 
-##### Model comparison
+###### Model comparison and averaging
 
 ```{r aic nfledged}
 # redefine models to poisson
@@ -745,7 +730,20 @@ fledged_m3p <- glm(.fledged ~ Bacteria_Killing_Assay*ylaydate +
                   family = poisson(link = "log"), 
                   data = filter(df, .fledged > 0 ) )
 
-ICtab(fledged_m1p, fledged_m2p, fledged_m3p, dispersion = dfun(fledged_m1p), type = "qAICc")
+# ICtab(fledged_m1p, fledged_m2p, fledged_m3p, dispersion = dfun(fledged_m1p), type = "qAICc")
+
+# calculate overdispersion
+
+disp = dfun(fledged_m1)
+
+# update qAICc in models
+
+fledged_m1$aic <- update.qAICc(fledged_m1p, dispersion = disp)
+fledged_m2$aic <- update.qAICc(fledged_m2p, dispersion = disp)
+fledged_m3$aic <- update.qAICc(fledged_m3p, dispersion = disp)
+
+summary(model.avg(fledged_m1, fledged_m2, fledged_m3, revised.var = TRUE))
+
 ```
 
 ### Nestling mass
@@ -800,17 +798,14 @@ nestling_m3 <- lmer(Nestling_Mass ~ Bacteria_Killing_Assay*ylaydate +
 summary(nestling_m3)
 ```
 
-##### model averaging
 
-```{r model avg}
-nestling_mass <- model.avg(nestling_m1, nestling_m2, nestling_m3, revised.var = TRUE)
-summary(nestling_mass)
-```
-
-##### Model comparison
+##### Model comparison and averaging
 
 ```{r aic neslting mass}
-ICtab(nestling_m1, nestling_m2, nestling_m3, type = "AICc")
+# ICtab(nestling_m1, nestling_m2, nestling_m3, type = "AICc")
+
+nestling_mass <- model.avg(nestling_m1, nestling_m2, nestling_m3, revised.var = TRUE)
+summary(nestling_mass)
 ```
 
 ## Survival
@@ -845,7 +840,9 @@ summary(return_m3)
 
 ##### Model comparison
 ```{r return AIC}
-ICtab(return_m1, return_m2, return_m3, type = "AICc")
+# ICtab(return_m1, return_m2, return_m3, type = "AICc")
+
+summary(model.avg(return_m1, return_m2, return_m3, revised.var = TRUE))
 ```
 
 
