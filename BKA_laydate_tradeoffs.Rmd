@@ -274,23 +274,19 @@ clutch_m3p <- glm(Clutch_Size ~ Bacteria_Killing_Assay*ylaydate + Age,
                  family = poisson(link = "log"), 
                  data = df)
 
-ICtab(clutch_m1p, clutch_m2p, clutch_m3p, dispersion = dfun(clutch_m1p), type = "qAICc")
+ICtab(clutch_m1p, clutch_m2p, clutch_m3p, dispersion = dfun(clutch_m1p), type = "qAICc", weights = TRUE)
 ```
 
-##### Model averaging
-```{r avg. model}
-# model average
-
+##### Model average
+```{r clutch avg}
 # 
 x.quasipoisson <- function(...) {
-
 res <- quasipoisson(...)
-
 res$aic <- poisson(...)$aic
-
 res
-
 }
+
+# update models to x.quasipoisson where residuals are poisson AICs in a quasipossion model
 
 clutch_m1<-update(clutch_m1,family = "x.quasipoisson")
 clutch_m2<-update(clutch_m2,family = "x.quasipoisson")
@@ -563,6 +559,13 @@ summary(provisioning_m6)
 ICtab(provisioning_m4, provisioning_m5, provisioning_m6, type = "AIC")
 ```
 
+###### Model Averaging
+
+```{r mate provisioning AIC}
+feeding_rate_wMales <- model.avg(provisioning_m4, provisioning_m5, provisioning_m6, revised.var = TRUE)
+summary(feeding_rate_wMales)
+```
+
 ### Mass Loss
 
 #### Mass loss distribution
@@ -613,6 +616,13 @@ summary(prop_mass_loss_m3)
 ICtab(prop_mass_loss_m1, prop_mass_loss_m2, prop_mass_loss_m3, type = "AICc")
 ```
 
+##### Model averaging
+
+```{r aic mass loss}
+mass_loss <- model.avg(prop_mass_loss_m1, prop_mass_loss_m2, prop_mass_loss_m3, revised.var = TRUE)
+summary(mass_loss)
+```
+
 ## BKA and reproductive success
 
 ### Fledging success
@@ -637,17 +647,22 @@ summary(success_m2)
 
 ##### Interaction model
 ```{r success interaction}
-success_m3 <- glm(Success ~ Bacteria_Killing_Assay*ylaydate + 
+success_m3 <- glm(success ~ Bacteria_Killing_Assay*ylaydate + 
                     Brood_Size_Hatching + Treatment2, 
                   family = binomial(link = "logit"), 
-                  data = df %>%
-                    mutate(Success = ifelse(Nest_Fate == "Fledged", 1, 0)))
+                  data = df )
 summary(success_m3)
 ```
 
 ##### Model comparison
 ```{r success AIC}
 ICtab(success_m1, success_m2, success_m3, type = "AICc")
+```
+
+##### Model averaging
+```{r success avg}
+success <- model.avg(success_m1, success_m2, success_m3, revised.var = TRUE)
+summary(success)
 ```
 
 ### Number of nestlings fledged
@@ -768,7 +783,8 @@ summary(nestling_m3)
 ##### model averaging
 
 ```{r model avg}
-summary(model.avg(nestling_m1, nestling_m2, nestling_m3))
+nestling_mass <- model.avg(nestling_m1, nestling_m2, nestling_m3, revised.var = TRUE)
+summary(nestling_mass)
 ```
 
 ##### Model comparison
