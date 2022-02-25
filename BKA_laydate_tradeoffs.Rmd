@@ -33,6 +33,12 @@ dfun <- function(object) {
   with(object,sum((weights * residuals^2)[weights > 0])/df.residual)
   }
 
+# update qAICc
+# update AIC in models object to include QAIC
+update.qAICc <- function(model, dispersion) {
+  model$aic <- qAICc(model, dispersion = dispersion, nobs = length(model$residuals))
+}
+
 # Read data files:
 # Assay data
 bk <- read_csv(here("data", "bk.csv"), col_types = 
@@ -76,6 +82,9 @@ pc <- read_csv(here("data", "pc.csv"),
                  Plasma_Analyzed = col_factor(),
                  Nest_Fate = col_factor()
                  ))
+
+# add general female and nest data (prop.ml is female proportion mass loss)
+pc <- left_join(pc, select(df, Individual_Band, prop.ml, success, Avg_FL_Nestling_Mass), by = "Individual_Band")
 
 # Lay Date groups
 lay_dates <- filter(df)$ylaydate
@@ -211,9 +220,32 @@ summary(glm(bk ~ Age,  family=Gamma(link="inverse"),
 #### BKA and Lay Date
 
 ```{r bka laydate}
+ggplot() + geom_histogram(aes(df$ylaydate), bins = 15, colour = "white") +
+  theme(panel.background = element_rect(fill=NA),
+        axis.line = element_line(size=1)) +
+  scale_y_continuous(limits = c(0, 10), breaks=seq(0,10,by=2),
+                     expand = c(0,0)) +
+  labs(x = "Lay Date (day of year)", y = "No. of individuals")
+
 summary(glm(bk ~ ylaydate, family = Gamma(link="inverse"),
                   data = df))
 ```
+
+#### Metric covariance
+
+```{r covariance}
+# covariance matrix
+pc %>% 
+  select(Clutch_Size, prop.ml, FemFeed, Avg_FL_Nestling_Mass, success, .fledged) %>%
+  cov(use = "complete.obs")
+
+# correlation matrix
+pc %>% 
+  select(Clutch_Size, prop.ml, FemFeed, Avg_FL_Nestling_Mass, success, .fledged) %>%
+  mutate(success = as.numeric(success)) %>%
+  cor(use = "complete.obs")
+```
+
 
 ### Clutch Size
 
@@ -260,7 +292,7 @@ clutch_m3 <- glm(Clutch_Size ~ Bacteria_Killing_Assay*ylaydate + Age,
 summary(clutch_m3)
 ```
 
-##### Model comparison
+##### Model comparison and average
 
 ```{r aic clutch}
 # redefine models to poisson models
@@ -274,29 +306,17 @@ clutch_m3p <- glm(Clutch_Size ~ Bacteria_Killing_Assay*ylaydate + Age,
                  family = poisson(link = "log"), 
                  data = df)
 
-ICtab(clutch_m1p, clutch_m2p, clutch_m3p, dispersion = dfun(clutch_m1p), type = "qAICc", weights = TRUE)
+# ICtab(clutch_m1p, clutch_m2p, clutch_m3p, dispersion = dfun(clutch_m1p), nobs = nrow(df), type = "qAICc")
+
+disp = dfun(clutch_m1)
+
+# updated qAICc in models for averaging
+clutch_m1$aic <- update.qAICc(clutch_m1p, dispersion = disp)
+clutch_m2$aic <- update.qAICc(clutch_m2p, dispersion = disp)
+clutch_m3$aic <- update.qAICc(clutch_m3p, dispersion = disp)
+
+summary(model.avg(clutch_m1, clutch_m2, clutch_m3, revised.var = TRUE))
 ```
-
-##### Model average
-```{r clutch avg}
-# 
-x.quasipoisson <- function(...) {
-res <- quasipoisson(...)
-res$aic <- poisson(...)$aic
-res
-}
-
-# update models to x.quasipoisson where residuals are poisson AICs in a quasipossion model
-
-clutch_m1<-update(clutch_m1,family = "x.quasipoisson")
-clutch_m2<-update(clutch_m2,family = "x.quasipoisson")
-clutch_m3<-update(clutch_m3,family = "x.quasipoisson")
-
-chat<-sum(residuals(clutch_m1,"pearson")^2)/clutch_m1$df.residual ### calculate overdispersion
-quasi.MS<-model.sel(clutch_m1, clutch_m2, clutch_m3, rank = QAICc, rank.args = alist(chat = chat))
-summary(model.avg(quasi.MS, revised.var = TRUE))
-```
-
 
 
 
